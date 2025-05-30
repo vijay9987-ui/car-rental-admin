@@ -1,8 +1,7 @@
 import React from 'react';
-import { Navbar, Container, Nav } from 'react-bootstrap';
-import PropTypes from 'prop-types';
+import { Navbar, Container } from 'react-bootstrap';
 
-const TopNavbar = ({ isSidebarCollapsed, onToggleSidebar }) => {
+const TopNavbar = ({ onToggleSidebar }) => {
   return (
     <Navbar
       bg="light"
@@ -23,22 +22,9 @@ const TopNavbar = ({ isSidebarCollapsed, onToggleSidebar }) => {
         <Navbar.Brand className="fw-bold text-primary">
           Admin Panel
         </Navbar.Brand>
-        <Navbar.Toggle aria-controls="navbar-nav" />
-        <Navbar.Collapse id="navbar-nav">
-          <Nav className="ms-auto">
-            {/* Future navigation links (optional) */}
-            {/* <Nav.Link href="/profile">Profile</Nav.Link>
-            <Nav.Link href="/settings">Settings</Nav.Link> */}
-          </Nav>
-        </Navbar.Collapse>
       </Container>
     </Navbar>
   );
-};
-
-TopNavbar.propTypes = {
-  isSidebarCollapsed: PropTypes.bool,
-  onToggleSidebar: PropTypes.func
 };
 
 export default TopNavbar;

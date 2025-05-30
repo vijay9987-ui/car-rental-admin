@@ -1,0 +1,27 @@
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  transition: margin-left 0.3s ease;
+}
+
+.admin-layout:not(.mobile) .main-content {
+  width: calc(100% - 250px);
+}
+
+.admin-layout:not(.mobile) .main-content.collapsed {
+  width: calc(100% - 80px);
+}
+
+.admin-layout.mobile .main-content {
+  width: 100%;
+}
+
+.content-wrapper {
+  padding: 20px;
+  min-height: calc(100vh - 60px);
+}

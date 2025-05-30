@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import TopNavbar from './TopNavbar';
 import { Outlet } from 'react-router-dom';
+import '../assets/adminlayout.css'; // Import the CSS file
 
 const AdminLayout = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -21,12 +22,11 @@ const AdminLayout = () => {
   }, []);
 
   return (
-    <div className="admin-layout">
+    <div className={`admin-layout ${isMobile ? 'mobile' : ''}`}>
       <Sidebar 
         isCollapsed={isSidebarCollapsed} 
         onToggleCollapse={setIsSidebarCollapsed}
         isMobile={isMobile}
-        jsx="true"
       />
       
       <div 
@@ -45,25 +45,6 @@ const AdminLayout = () => {
           <Outlet />
         </div>
       </div>
-
-      <style jsx>{`
-        .admin-layout {
-          display: flex;
-          min-height: 100vh;
-          position: relative;
-        }
-        
-        .main-content {
-          flex: 1;
-          transition: margin-left 0.3s ease;
-          width: ${isMobile ? '100%' : `calc(100% - ${isSidebarCollapsed ? '80px' : '250px'})`};
-        }
-        
-        .content-wrapper {
-          padding: 20px;
-          min-height: calc(100vh - 60px);
-        }
-      `}</style>
     </div>
   );
 };

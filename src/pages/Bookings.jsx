@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Table, Button, Modal, Form } from "react-bootstrap";
+import { Table, Button, Modal, Form, Pagination } from "react-bootstrap";
+import { ToastContainer, toast } from 'react-toastify';
 
 const BookingsPage = () => {
   const [bookings, setBookings] = useState([]);
@@ -9,7 +10,7 @@ const BookingsPage = () => {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const bookingsPerPage = 10; // You can change this number
+  const bookingsPerPage = 5;
 
   useEffect(() => {
     fetchBookings();
@@ -22,9 +23,11 @@ const BookingsPage = () => {
       );
       if (response.data && response.data.bookings) {
         setBookings(response.data.bookings);
+        toast.success('Bookings fetched successfully!');
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
+      toast.error(error.message);
     }
   };
 
@@ -38,8 +41,10 @@ const BookingsPage = () => {
       await axios.put(`/api/bookings/${selectedBooking._id}`, selectedBooking);
       fetchBookings();
       setShowEditModal(false);
+      toast.success('Bookings Updated successfully!');
     } catch (error) {
       console.error("Error updating booking:", error);
+      toast.error(error.message);
     }
   };
 
@@ -48,8 +53,10 @@ const BookingsPage = () => {
       try {
         await axios.delete(`/api/bookings/${bookingId}`);
         fetchBookings();
+        toast.success('Bookings deleted successfully!');
       } catch (error) {
         console.error("Error deleting booking:", error);
+        toast.error(error.message);
       }
     }
   };
@@ -61,91 +68,98 @@ const BookingsPage = () => {
 
   const totalPages = Math.ceil(bookings.length / bookingsPerPage);
 
-  const handlePrevPage = () => {
-    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
+  const renderPagination = () => {
+    const pages = [];
+    for (let number = 1; number <= totalPages; number++) {
+      pages.push(
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
+          onClick={() => setCurrentPage(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+    return (
+      <Pagination className="mt-3 justify-content-center">
+        <Pagination.Item
+          disabled={currentPage === 1}
+          onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+        >
+          Prev
+        </Pagination.Item>
+        {pages}
+        <Pagination.Item
+          disabled={currentPage === totalPages}
+          onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+        >
+          Next
+        </Pagination.Item>
+      </Pagination>
+    );
   };
 
   return (
     <div className="container mt-4">
-      <h2>Bookings</h2>
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>User Name</th>
-            <th>Email</th>
-            <th>Car</th>
-            <th>Model</th>
-            <th>Rental Date</th>
-            <th>From - To</th>
-            <th>Total Price</th>
-            <th>Pickup Location</th>
-            <th>Status</th>
-            <th>Payment</th>
-            <th>OTP</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentBookings.map((booking) => (
-            <tr key={booking._id}>
-              <td>{booking.userId?.name}</td>
-              <td>{booking.userId?.email}</td>
-              <td>{booking.car?.carName}</td>
-              <td>{booking.car?.model}</td>
-              <td>{booking.rentalStartDate}</td>
-              <td>
-                {booking.from} - {booking.to}
-              </td>
-              <td>₹{booking.totalPrice}</td>
-              <td>{booking.pickupLocation}</td>
-              <td>{booking.status}</td>
-              <td>{booking.paymentStatus}</td>
-              <td>{booking.otp}</td>
-              <td>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleEdit(booking)}
-                  className="me-2"
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => handleDelete(booking._id)}
-                >
-                  Delete
-                </Button>
-              </td>
+      <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <>
+        <h2>Bookings Management</h2>
+      </>
+      <div className="table-responsive">
+        <Table striped bordered hover responsive>
+          <thead>
+            <tr className='table-header'>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Car</th>
+              <th>Model</th>
+              <th>Rental Date</th>
+              <th>Timings</th>
+              <th>Total Price</th>
+              <th>Pickup Location</th>
+              <th>Status</th>
+              <th>Payment</th>
+              <th>OTP</th>
+              <th>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </Table>
+          </thead>
+          <tbody>
+            {currentBookings.map((booking) => (
+              <tr key={booking._id}>
+                <td>{booking.userId?.name}</td>
+                <td>{booking.userId?.email}</td>
+                <td>{booking.car?.carName}</td>
+                <td>{booking.car?.model}</td>
+                <td>{booking.rentalStartDate}</td>
+                <td>
+                  {booking.from} - {booking.to}
+                </td>
+                <td>₹{booking.totalPrice}</td>
+                <td>{booking.pickupLocation}</td>
+                <td>{booking.status}</td>
+                <td>{booking.paymentStatus}</td>
+                <td>{booking.otp}</td>
+                <td className="text-center">
+                  <button
+                    onClick={() => handleEdit(booking)}
+                    className="mb-2 btn btn-sm btn-outline-warning"
+                  >
+                    <i className="fas fa-edit me-1"></i>
+                  </button>
+                  <button
+                    onClick={() => handleDelete(booking._id)}
+                    className="btn btn-sm btn-outline-danger"
+                  >
+                    <i className="fas fa-trash me-1"></i>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
 
-      {/* Pagination controls */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <Button
-          variant="secondary"
-          onClick={handlePrevPage}
-          disabled={currentPage === 1}
-        >
-          Prev
-        </Button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <Button
-          variant="secondary"
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages || totalPages === 0}
-        >
-          Next
-        </Button>
+        {renderPagination()}
       </div>
 
       {/* Edit Modal */}

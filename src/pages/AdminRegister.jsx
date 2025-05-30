@@ -21,23 +21,17 @@ const AdminRegister = () => {
     try {
       const response = await fetch('http://194.164.148.244:4062/api/admin/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
-        // Try to parse error message from response
         const errData = await response.json();
         throw new Error(errData.message || 'Registration failed');
       }
 
       setSuccess('Registration successful! Redirecting to login...');
-      console.log(formData);
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
+      setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -46,87 +40,151 @@ const AdminRegister = () => {
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center min-vh-100">
-      <Row className="w-100 justify-content-center">
-        <Col xs={12} sm={10} md={8} lg={6} xl={4}>
-          <Card className="shadow">
-            <Card.Body>
-              <h4 className="text-center mb-4">Admin Register</h4>
+    <div
+      style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px',
+      }}
+    >
+      <Container>
+        <Row className="justify-content-center">
+          <Col xs={12} sm={10} md={8} lg={6} xl={5}>
+            <Card
+              className="shadow-lg border-0"
+              style={{
+                borderRadius: '15px',
+                overflow: 'hidden',
+                backdropFilter: 'blur(10px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              }}
+            >
+              <Card.Body className="p-4 p-sm-5">
+                <div className="text-center mb-4">
+                  <h3
+                    className="fw-bold"
+                    style={{
+                      color: '#6f42c1',
+                      background: 'linear-gradient(to right, #6f42c1, #6610f2)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}
+                  >
+                    Admin Registration
+                  </h3>
+                  <p className="text-muted">Create your admin account</p>
+                </div>
 
-              {error && <Alert variant="danger">{error}</Alert>}
-              {success && <Alert variant="success">{success}</Alert>}
+                {error && (
+                  <Alert variant="danger" className="rounded-pill text-center">
+                    {error}
+                  </Alert>
+                )}
+                {success && (
+                  <Alert variant="success" className="rounded-pill text-center">
+                    {success}
+                  </Alert>
+                )}
 
-              <Form onSubmit={handleSubmit}>
-                <Form.Group controlId="name" className="mb-3">
-                  <Form.Label>Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="name"
-                    placeholder="Enter name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
+                <Form onSubmit={handleSubmit}>
+                  <Form.Group controlId="name" className="mb-4">
+                    <Form.Label className="text-muted">Name</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="name"
+                      placeholder="Enter full name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      style={{ height: '50px' }}
+                    />
+                  </Form.Group>
 
-                <Form.Group controlId="mobile" className="mb-3">
-                  <Form.Label>Mobile</Form.Label>
-                  <Form.Control
-                    type="tel"
-                    name="mobile"
-                    placeholder="Enter mobile"
-                    value={formData.mobile}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-
-                <Form.Group controlId="email" className="mb-3">
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    placeholder="Enter email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                  />
-                </Form.Group>
-
-                <Button type="submit" variant="primary" className="w-100" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                        className="me-2"
+                  <Form.Group controlId="mobile" className="mb-4">
+                    <Form.Label className="text-muted">Mobile Number</Form.Label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border-end-0">+91</span>
+                      <Form.Control
+                        type="tel"
+                        name="mobile"
+                        placeholder="Enter mobile number"
+                        value={formData.mobile}
+                        onChange={handleChange}
+                        required
+                        className="border-start-0"
+                        style={{ height: '50px' }}
                       />
-                      Registering...
-                    </>
-                  ) : (
-                    'Register'
-                  )}
-                </Button>
-              </Form>
+                    </div>
+                  </Form.Group>
 
-              <div className="mt-3 text-center">
-                Already have an account?{' '}
-                <span
-                  className="text-primary"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate('/')}
-                >
-                  Login
-                </span>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                  <Form.Group controlId="email" className="mb-4">
+                    <Form.Label className="text-muted">Email</Form.Label>
+                    <Form.Control
+                      type="email"
+                      name="email"
+                      placeholder="Enter email address"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      style={{ height: '50px' }}
+                    />
+                  </Form.Group>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    className="w-100 py-3 mt-3 rounded-pill border-0"
+                    disabled={loading}
+                    style={{
+                      background: 'linear-gradient(to right, #6f42c1, #6610f2)',
+                      fontWeight: '600',
+                      letterSpacing: '0.5px',
+                    }}
+                  >
+                    {loading ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                          className="me-2"
+                        />
+                        Registering...
+                      </>
+                    ) : (
+                      'Register'
+                    )}
+                  </Button>
+                </Form>
+
+                <div className="text-center mt-4">
+                  <p className="text-muted mb-0">
+                    Already have an account?{' '}
+                    <span
+                      className="text-primary fw-bold"
+                      style={{
+                        cursor: 'pointer',
+                        background: 'linear-gradient(to right, #6f42c1, #6610f2)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}
+                      onClick={() => navigate('/')}
+                    >
+                      Login here
+                    </span>
+                  </p>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 };
 

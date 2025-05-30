@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Modal, Table, Form, Spinner, Alert, Pagination, Image } from 'react-bootstrap';
+import { ToastContainer, toast } from 'react-toastify';
+
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -19,8 +21,10 @@ const Users = () => {
         if (!res.ok) throw new Error('Failed to fetch users');
         const data = await res.json();
         setUsers(data.users || []);
+        toast.success('Users fetched successfully!');
       } catch (err) {
         setError(err.message);
+        toast.error(err.message);
       } finally {
         setLoading(false);
       }
@@ -45,25 +49,28 @@ const Users = () => {
         });
 
         if (!res.ok) throw new Error('Failed to update user');
+
         const updatedUsers = [...users];
         updatedUsers[editingIndex] = { ...updatedUsers[editingIndex], ...formData };
         setUsers(updatedUsers);
+
+        toast.success('User updated successfully!');
       } else {
         // Optional: handle creation if API is available
-        alert('Add user API not implemented.');
+        toast.info('Add user API not implemented.');
       }
 
       setShow(false);
       setEditingIndex(null);
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
   const handleDelete = async (index) => {
     const user = users[index];
-    const confirm = window.confirm(`Are you sure you want to delete user ${user.name}?`);
-    if (!confirm) return;
+    const confirmDelete = window.confirm(`Are you sure you want to delete user ${user.name}?`);
+    if (!confirmDelete) return;
 
     try {
       const res = await fetch(`http://194.164.148.244:4062/api/admin/deleteuser/${user.id}`, {
@@ -73,8 +80,10 @@ const Users = () => {
 
       const updatedUsers = users.filter((_, i) => i !== index);
       setUsers(updatedUsers);
+
+      toast.success('User deleted successfully!');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -103,7 +112,7 @@ const Users = () => {
           disabled={currentPage === 1}
           onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
         >
-          Previous
+          Prev
         </Pagination.Item>
         {pages}
         <Pagination.Item
@@ -118,9 +127,10 @@ const Users = () => {
 
   return (
     <div className="p-3">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>Users</h3>
-        <Button
+      <ToastContainer position="top-right" autoClose={2000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <div className="d-flex justify-content-center align-items-center mb-3">
+        <h3 className="mb-4 text-center">Users Management</h3>
+        {/* <Button
           style={{
             background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
             color: "white"
@@ -128,7 +138,7 @@ const Users = () => {
           onClick={() => handleShow()}
         >
           Add User
-        </Button>
+        </Button> */}
       </div>
 
       {loading ? (
@@ -139,61 +149,66 @@ const Users = () => {
         <Alert variant="danger">{error}</Alert>
       ) : (
         <>
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr
-                style={{
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white"
-                }}
-              >
-                <th>#</th>
-                <th>ID</th>
-                <th>Profile</th>
-                <th>Name</th>
-                <th>Mobile</th>
-                <th>Email</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentUsers.map((u, i) => (
-                <tr key={indexOfFirstUser + i}>
-                  <td>{indexOfFirstUser + i + 1}</td>
-                  <td>{u.id?.slice(-6) || '-'}</td>
-                  <td>
-                    <Image
-                      src={u.profileImage || 'profile.png'}
-                      alt="profile"
-                      roundedCircle
-                      width="40"
-                      height="40"
-                    />
-                  </td>
-                  <td>{u.name || '-'}</td>
-                  <td>{u.mobile || '-'}</td>
-                  <td>{u.email || '-'}</td>
-                  <td>
-                    <button
-                      size="sm"
-                      onClick={() => handleShow(u, indexOfFirstUser + i)}
-                      className="me-2 btn btn-sm btn-outline-warning"
-                    >
-                      <i className="fas fa-edit me-1"></i>
-                    </button>
-                    <button
-                      size="sm"
-                      onClick={() => handleDelete(indexOfFirstUser + i)}
-                      className="me-2 btn btn-sm btn-outline-danger"
-                    >
-                      <i className="fas fa-trash me-1"></i>
-                    </button>
-                  </td>
+          <div className='table-responsive'>
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr
+                  className='table-header'
+                  style={{
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    color: "white",
+                    textAlign: "center"
+                  }} //gradient-header  css for gradient
+                >
+                  <th>SNO</th>
+                  <th>ID</th>
+                  <th>Profile</th>
+                  <th>Name</th>
+                  <th>Mobile</th>
+                  <th>Email</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
-          {renderPagination()}
+              </thead>
+              <tbody>
+                {currentUsers.map((u, i) => (
+                  <tr key={indexOfFirstUser + i}>
+                    <td>{indexOfFirstUser + i + 1}</td>
+                    <td>{u.id?.slice(-6) || '-'}</td>
+                    <td>
+                      <Image
+                        src={u.profileImage ? u.profileImage : "/profile.png"}
+                        alt="profile"
+                        roundedCircle
+                        width="40"
+                        height="40"
+                      />
+
+                    </td>
+                    <td>{u.name || '-'}</td>
+                    <td>{u.mobile || '-'}</td>
+                    <td>{u.email || '-'}</td>
+                    <td>
+                      <button
+                        size="sm"
+                        onClick={() => handleShow(u, indexOfFirstUser + i)}
+                        className="me-2 btn btn-sm btn-outline-warning"
+                      >
+                        <i className="fas fa-edit me-1"></i>
+                      </button>
+                      <button
+                        size="sm"
+                        onClick={() => handleDelete(indexOfFirstUser + i)}
+                        className="me-2 btn btn-sm btn-outline-danger"
+                      >
+                        <i className="fas fa-trash me-1"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+            {renderPagination()}
+          </div>
         </>
       )}
 

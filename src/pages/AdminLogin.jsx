@@ -26,10 +26,11 @@ const AdminLogin = () => {
       }
 
       const data = await response.json();
-
-      // Here you can store token/session if your API returns any (e.g., data.token)
-      // localStorage.setItem('adminToken', data.token);
-      console.log(mobile);
+      sessionStorage.setItem('adminUser', JSON.stringify({
+        mobile: data.mobile,
+        id: data.id,
+        token: data.token,
+      }));
       navigate('/admin/dashboard');
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -39,61 +40,113 @@ const AdminLogin = () => {
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center min-vh-100">
-      <Row className="w-100 justify-content-center">
-        <Col xs={12} sm={10} md={8} lg={6} xl={4}>
-          <Card className="shadow">
-            <Card.Body>
-              <h4 className="text-center mb-4">Admin Login</h4>
+    <div style={{
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px'
+    }}>
+      <Container>
+        <Row className="justify-content-center">
+          <Col xs={12} sm={10} md={8} lg={6} xl={5}>
+            <Card className="shadow-lg border-0" style={{
+              borderRadius: '15px',
+              overflow: 'hidden',
+              backdropFilter: 'blur(10px)',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)'
+            }}>
+              <Card.Body className="p-4 p-sm-5">
+                <div className="text-center mb-4">
+                  <h3 className="fw-bold" style={{ 
+                    color: '#6f42c1',
+                    background: 'linear-gradient(to right, #6f42c1, #6610f2)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}>
+                    Admin Portal
+                  </h3>
+                  <p className="text-muted">Sign in to your admin account</p>
+                </div>
 
-              {error && <Alert variant="danger">{error}</Alert>}
+                {error && (
+                  <Alert variant="danger" className="rounded-pill text-center">
+                    {error}
+                  </Alert>
+                )}
 
-              <Form onSubmit={handleSubmit}>
-                <Form.Group controlId="mobile" className="mb-3">
-                  <Form.Label>Mobile</Form.Label>
-                  <Form.Control
-                    type="tel"
-                    placeholder="Enter mobile"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                    required
-                  />
-                </Form.Group>
-
-                <Button type="submit" variant="primary" className="w-100" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Spinner
-                        as="span"
-                        animation="border"
-                        size="sm"
-                        role="status"
-                        aria-hidden="true"
-                        className="me-2"
+                <Form onSubmit={handleSubmit}>
+                  <Form.Group controlId="mobile" className="mb-4">
+                    <Form.Label className="text-muted">Mobile Number</Form.Label>
+                    <div className="input-group">
+                      <span className="input-group-text bg-light border-end-0">
+                        +91
+                      </span>
+                      <Form.Control
+                        type="tel"
+                        placeholder="Enter mobile number"
+                        value={mobile}
+                        onChange={(e) => setMobile(e.target.value)}
+                        required
+                        className="border-start-0"
+                        style={{ height: '50px' }}
                       />
-                      Logging in...
-                    </>
-                  ) : (
-                    'Login'
-                  )}
-                </Button>
-              </Form>
+                    </div>
+                  </Form.Group>
 
-              <div className="mt-3 text-center">
-                New admin?{' '}
-                <span
-                  className="text-primary"
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => navigate('/register')}
-                >
-                  Register here
-                </span>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                  <Button 
+                    type="submit" 
+                    variant="primary" 
+                    className="w-100 py-3 mt-3 rounded-pill border-0"
+                    disabled={loading}
+                    style={{
+                      background: 'linear-gradient(to right, #6f42c1, #6610f2)',
+                      fontWeight: '600',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    {loading ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                          className="me-2"
+                        />
+                        Authenticating...
+                      </>
+                    ) : (
+                      'Login'
+                    )}
+                  </Button>
+                </Form>
+
+                <div className="text-center mt-4">
+                  <p className="text-muted mb-0">
+                    Don't have admin access?{' '}
+                    <span
+                      className="text-primary fw-bold"
+                      style={{ 
+                        cursor: 'pointer',
+                        background: 'linear-gradient(to right, #6f42c1, #6610f2)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                      }}
+                      onClick={() => navigate('/register')}
+                    >
+                      Register
+                    </span>
+                  </p>
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </div>
   );
 };
 
