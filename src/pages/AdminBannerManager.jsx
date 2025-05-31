@@ -137,48 +137,50 @@ const AdminBannerManager = () => {
             ) : banners.length === 0 ? (
                 <Alert variant="info">No banners found.</Alert>
             ) : (
-                <Row>
+                <div className="d-flex overflow-auto flex-row gap-3 pb-3">
                     {banners.map((banner) => (
-                        <Col key={banner._id} xs={12} sm={12} md={6} lg={4} className="mb-4">
-                            <Card className="h-100 shadow-sm">
-                                <Card.Body>
-                                    <div className="d-flex justify-content-between align-items-center mb-3">
-                                        <Card.Title className="mb-0">Banner Set</Card.Title>
-                                        <div>
-                                            <button
-                                                className="me-2 btn btn-sm btn-outline-warning"
-                                                onClick={() => handleEditClick(banner._id)}
-                                            >
-                                                <i className="fas fa-edit me-1"></i>
-                                            </button>
-                                            <button
-                                                className="btn btn-sm btn-outline-danger"
-                                                onClick={() => handleDelete(banner._id)}
-                                            >
-                                                <i className="fas fa-trash me-1"></i>
-                                            </button>
-                                        </div>
+                        <Card key={banner._id} className="shadow-sm flex-shrink-0" style={{ minWidth: '300px' }}>
+                            <Card.Body>
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <Card.Title className="mb-0">Banner Set</Card.Title>
+                                    <div>
+                                        <button
+                                            className="me-2 btn btn-sm btn-outline-warning"
+                                            onClick={() => handleEditClick(banner._id)}
+                                        >
+                                            <i className="fas fa-edit me-1"></i>
+                                        </button>
+                                        <button
+                                            className="btn btn-sm btn-outline-danger"
+                                            onClick={() => handleDelete(banner._id)}
+                                        >
+                                            <i className="fas fa-trash me-1"></i>
+                                        </button>
                                     </div>
+                                </div>
 
+                                <div className="d-flex flex-wrap gap-2 mb-3">
                                     {banner.images.map((img, idx) => (
                                         <div
                                             key={idx}
-                                            className="mb-3 rounded"
+                                            className="rounded"
                                             style={{
-                                                aspectRatio: '16 / 9',
+                                                width: '140px',
+                                                height: '80px',
                                                 background: `url(${img}) center center / cover no-repeat`,
+                                                flexShrink: 0,
                                             }}
                                         />
                                     ))}
-                                    <p className="text-muted small">
-                                        Uploaded: {new Date(banner.createdAt).toLocaleString()}
-                                    </p>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    ))}
-                </Row>
+                                </div>
 
+                                <p className="text-muted small">
+                                    Uploaded: {new Date(banner.createdAt).toLocaleString()}
+                                </p>
+                            </Card.Body>
+                        </Card>
+                    ))}
+                </div>
             )}
 
             {/* Edit Modal */}

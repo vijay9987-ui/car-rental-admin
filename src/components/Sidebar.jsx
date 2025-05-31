@@ -7,7 +7,8 @@ import {
   FaUserTie,
   FaCarSide,
   FaClipboardList,
-  FaImages ,
+  FaImages,
+  FaCog,
   FaSignOutAlt,
   FaChevronLeft,
   FaChevronRight,
@@ -25,6 +26,7 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobile }) => {
     { path: '/admin/vehicles', icon: <FaCarSide />, label: 'Vehicles' },
     { path: '/admin/bookings', icon: <FaClipboardList />, label: 'Bookings' },
     { path: '/admin/banners', icon: <FaImages  />, label: 'Banners' },
+    { path: '/admin/settings', icon: <FaCog />, label: 'Settings' },
     { path: '/', icon: <FaSignOutAlt />, label: 'Logout' }
   ];
 

@@ -2,7 +2,7 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Spinner, Row, Col, Container, Card, Table, Button, Badge } from 'react-bootstrap';
-import { FaUsers, FaCarSide, FaClipboardList, FaRupeeSign } from 'react-icons/fa';
+import { FaUsers, FaCarSide, FaClipboardList, FaRupeeSign, FaUserTie } from 'react-icons/fa';
 import { Bar, Pie, Line, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -34,7 +34,15 @@ ChartJS.register(
 const Dashboard = () => {
   const [userCount, setUserCount] = useState(0);
   const [vehicleCount, setVehicleCount] = useState(0);
-  const [bookingStats, setBookingStats] = useState({ paid: 0, pending: 0 });
+  const [staffCount, setStaffCount] = useState(0);
+  const [bookingStats, setBookingStats] = useState({
+    pending: 0,
+    confirmed: 0,
+    cancelled: 0,
+    completed: 0,
+    active: 0
+  });
+  const [paymentStats, setPaymentStats] = useState({ paid: 0, pending: 0 });
   const [recentBookings, setRecentBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,26 +53,44 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [userRes, vehicleRes, bookingRes] = await Promise.all([
+        const [userRes, vehicleRes, bookingRes, staffRes] = await Promise.all([
           axios.get('http://194.164.148.244:4062/api/admin/allusers'),
           axios.get('http://194.164.148.244:4062/api/car/get-cars'),
           axios.get('http://194.164.148.244:4062/api/staff/allbookings'),
+          axios.get('http://194.164.148.244:4062/api/admin/getallstaffs'),
         ]);
 
         const users = userRes.data.users || [];
         const vehicles = vehicleRes.data.cars || [];
         const bookings = bookingRes.data.bookings || [];
+        const staffs = staffRes.data.staff || [];
 
         setUserCount(users.length);
         setVehicleCount(vehicleRes.data.total);
+        setStaffCount(staffs.length);
 
-        const statusCounts = { paid: 0, pending: 0 };
+        const statusCounts = {
+          pending: 0,
+          confirmed: 0,
+          cancelled: 0,
+          completed: 0,
+          active: 0
+        };
+        
+        const paymentCounts = { paid: 0, pending: 0 };
         const vehicleTypeCounts = {};
 
         bookings.forEach((booking) => {
-          const status = booking.paymentStatus?.toLowerCase();
-          if (status === 'paid') statusCounts.paid++;
-          else if (status === 'pending') statusCounts.pending++;
+          // Count booking statuses
+          const status = booking.status?.toLowerCase();
+          if (status && statusCounts.hasOwnProperty(status)) {
+            statusCounts[status]++;
+          }
+
+          // Count payment statuses
+          const paymentStatus = booking.paymentStatus?.toLowerCase();
+          if (paymentStatus === 'paid') paymentCounts.paid++;
+          else if (paymentStatus === 'pending') paymentCounts.pending++;
         });
 
         vehicles.forEach(car => {
@@ -73,6 +99,7 @@ const Dashboard = () => {
         });
 
         setBookingStats(statusCounts);
+        setPaymentStats(paymentCounts);
         setVehicleTypes(vehicleTypeCounts);
         setRecentBookings(bookings.slice(0, 10));
         setLoading(false);
@@ -85,7 +112,7 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const bookingCount = bookingStats.paid + bookingStats.pending;
+  const bookingCount = Object.values(bookingStats).reduce((a, b) => a + b, 0);
 
   // Pagination logic
   const indexOfLastBooking = currentPage * bookingsPerPage;
@@ -98,11 +125,11 @@ const Dashboard = () => {
 
   // Chart data configurations
   const barData = {
-    labels: ['Users', 'Vehicles', 'Bookings'],
+    labels: ['Users', 'Staff', 'Vehicles', 'Bookings'],
     datasets: [{
       label: 'Count',
-      data: [userCount, vehicleCount, bookingCount],
-      backgroundColor: ['#6f42c1', '#6610f2', '#6f42c1'],
+      data: [userCount, staffCount, vehicleCount, bookingCount],
+      backgroundColor: ['#6f42c1', '#20c997', '#6610f2', '#fd7e14'],
       borderRadius: 8,
     }],
   };
@@ -111,8 +138,30 @@ const Dashboard = () => {
     labels: ['Paid', 'Pending'],
     datasets: [{
       label: 'Payment Status',
-      data: [bookingStats.paid, bookingStats.pending],
+      data: [paymentStats.paid, paymentStats.pending],
       backgroundColor: ['#28a745', '#ffc107'],
+      borderWidth: 1,
+    }],
+  };
+
+  const statusPieData = {
+    labels: ['Pending', 'Confirmed', 'Active', 'Completed', 'Cancelled'],
+    datasets: [{
+      label: 'Booking Status',
+      data: [
+        bookingStats.pending,
+        bookingStats.confirmed,
+        bookingStats.active,
+        bookingStats.completed,
+        bookingStats.cancelled
+      ],
+      backgroundColor: [
+        '#ffc107', // pending - yellow
+        '#17a2b8', // confirmed - teal
+        '#007bff', // active - blue
+        '#28a745', // completed - green
+        '#dc3545'  // cancelled - red
+      ],
       borderWidth: 1,
     }],
   };
@@ -130,11 +179,11 @@ const Dashboard = () => {
   };
 
   const doughnutData = {
-    labels: Object.keys(vehicleTypes),
+    labels: ['Users', 'Staff', 'Vehicles', 'Bookings'],
     datasets: [{
-      label: 'Vehicle Types',
-      data: Object.values(vehicleTypes),
-      backgroundColor: ['#6f42c1', '#20c997', '#fd7e14', '#0dcaf0', '#dc3545', '#6c757d'],
+      label: 'System Distribution',
+      data: [userCount, staffCount, vehicleCount, bookingCount],
+      backgroundColor: ['#6f42c1', '#20c997', '#6610f2', '#fd7e14'],
       borderWidth: 1,
     }],
   };
@@ -154,13 +203,41 @@ const Dashboard = () => {
     },
   };
 
+  const getStatusBadge = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'warning';
+      case 'confirmed':
+        return 'info';
+      case 'active':
+        return 'primary';
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+        return 'danger';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getPaymentBadge = (paymentStatus) => {
+    switch (paymentStatus?.toLowerCase()) {
+      case 'paid':
+        return 'success';
+      case 'pending':
+        return 'warning';
+      default:
+        return 'secondary';
+    }
+  };
+
   return (
     <Container fluid className="px-4 py-3">
       <h2 className="mb-4 fw-bold text-primary text-center">Admin Dashboard</h2>
 
       {/* Summary Cards */}
       <Row className="g-4 mb-4">
-        <Col md={4}>
+        <Col md={3}>
           <Card className="shadow-sm border-0">
             <Card.Body className="p-3 d-flex align-items-center">
               <div className="bg-primary bg-opacity-10 p-3 rounded me-3">
@@ -173,7 +250,20 @@ const Dashboard = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
+        <Col md={3}>
+          <Card className="shadow-sm border-0">
+            <Card.Body className="p-3 d-flex align-items-center">
+              <div className="bg-success bg-opacity-10 p-3 rounded me-3">
+                <FaUserTie size={24} className="text-success" />
+              </div>
+              <div>
+                <Card.Title className="text-muted mb-1">Total Staff</Card.Title>
+                <h3 className="mb-0">{staffCount}</h3>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
           <Card className="shadow-sm border-0">
             <Card.Body className="p-3 d-flex align-items-center">
               <div className="bg-info bg-opacity-10 p-3 rounded me-3">
@@ -186,11 +276,11 @@ const Dashboard = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
+        <Col md={3}>
           <Card className="shadow-sm border-0">
             <Card.Body className="p-3 d-flex align-items-center">
-              <div className="bg-primary bg-opacity-10 p-3 rounded me-3">
-                <FaClipboardList size={24} className="text-primary" />
+              <div className="bg-warning bg-opacity-10 p-3 rounded me-3">
+                <FaClipboardList size={24} className="text-warning" />
               </div>
               <div>
                 <Card.Title className="text-muted mb-1">Total Bookings</Card.Title>
@@ -237,14 +327,14 @@ const Dashboard = () => {
         <Col xl={6}>
           <Card className="shadow-sm border-0 h-100">
             <Card.Body>
-              <Card.Title className="fw-bold mb-3">Payment Status</Card.Title>
+              <Card.Title className="fw-bold mb-3">Booking Status</Card.Title>
               <div style={{ height: '300px' }}>
                 {loading ? (
                   <div className="d-flex justify-content-center align-items-center h-100">
                     <Spinner animation="border" variant="primary" />
                   </div>
                 ) : (
-                  <Pie data={pieData} options={chartOptions} />
+                  <Pie data={statusPieData} options={chartOptions} />
                 )}
               </div>
             </Card.Body>
@@ -285,9 +375,9 @@ const Dashboard = () => {
         <Col xl={6}>
           <Card className="shadow-sm border-0 h-100">
             <Card.Body>
-              <Card.Title className="fw-bold mb-3">Vehicle Type Distribution</Card.Title>
+              <Card.Title className="fw-bold mb-3">Payment Status</Card.Title>
               <div style={{ height: '300px' }}>
-                <Doughnut data={doughnutData} options={chartOptions} />
+                <Doughnut data={pieData} options={chartOptions} />
               </div>
             </Card.Body>
           </Card>
@@ -323,6 +413,7 @@ const Dashboard = () => {
                           <th>Location</th>
                           <th>Price</th>
                           <th>Status</th>
+                          <th>Payment</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -342,8 +433,13 @@ const Dashboard = () => {
                               {booking.totalPrice}
                             </td>
                             <td>
-                              <Badge bg={booking.paymentStatus === 'Paid' ? 'success' : 'warning'} className="text-capitalize">
-                                {booking.paymentStatus}
+                              <Badge bg={getStatusBadge(booking.status)} className="text-capitalize">
+                                {booking.status || 'N/A'}
+                              </Badge>
+                            </td>
+                            <td>
+                              <Badge bg={getPaymentBadge(booking.paymentStatus)} className="text-capitalize">
+                                {booking.paymentStatus || 'N/A'}
                               </Badge>
                             </td>
                           </tr>
@@ -352,11 +448,10 @@ const Dashboard = () => {
                     </Table>
                   </div>
 
-
                   {/* Pagination */}
                   <div className="d-flex justify-content-between align-items-center mt-3">
                     <button
-                      className={`btn ${currentPage === 1 ? `btn-outline-secoundary` : `btn-outline-primary` }`}
+                      className={`btn ${currentPage === 1 ? `btn-outline-secondary` : `btn-outline-primary`}`}
                       onClick={handlePrevPage}
                       disabled={currentPage === 1}
                     >
@@ -364,7 +459,7 @@ const Dashboard = () => {
                     </button>
                     <span>Page {currentPage} of {totalPages}</span>
                     <button
-                      className={`btn ${currentPage === totalPages || totalPages === 0 ? `btn-outline-secoundary` : `btn-outline-primary` }`}
+                      className={`btn ${currentPage === totalPages || totalPages === 0 ? `btn-outline-secondary` : `btn-outline-primary`}`}
                       onClick={handleNextPage}
                       disabled={currentPage === totalPages || totalPages === 0}
                     >
