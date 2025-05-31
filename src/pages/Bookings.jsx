@@ -9,7 +9,9 @@ const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [bookingDetails, setBookingDetails] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [filterField, setFilterField] = useState("name");
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,11 +30,23 @@ const Bookings = () => {
       const response = await axios.get("http://194.164.148.244:4062/api/staff/allbookings");
       if (response.data?.bookings) {
         setBookings(response.data.bookings);
-        // toast.success("Bookings fetched successfully!");
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
       toast.error("Failed to fetch bookings.");
+    }
+  };
+
+  const fetchBookingDetails = async (bookingId) => {
+    try {
+      const response = await axios.get(`http://194.164.148.244:4062/api/staff/singlebooking/${bookingId}`);
+      if (response.data?.booking) {
+        setBookingDetails(response.data.booking);
+        setShowDetailsModal(true);
+      }
+    } catch (error) {
+      console.error("Error fetching booking details:", error);
+      toast.error("Failed to fetch booking details.");
     }
   };
 
@@ -69,6 +83,10 @@ const Bookings = () => {
     setShowEditModal(true);
   };
 
+  const handleViewDetails = (bookingId) => {
+    fetchBookingDetails(bookingId);
+  };
+
   const handleSaveChanges = async () => {
     try {
       const { _id, status, paymentStatus } = selectedBooking;
@@ -87,7 +105,7 @@ const Bookings = () => {
   const handleDelete = async (bookingId) => {
     if (window.confirm("Are you sure you want to delete this booking?")) {
       try {
-        await axios.delete(`http://194.164.148.244:4062/api/bookings/${bookingId}`);
+        await axios.delete(`http://194.164.148.244:4062/api/admin/deletebooking/${bookingId}`);
         fetchBookings();
         toast.success("Booking deleted successfully!");
       } catch (error) {
@@ -210,6 +228,7 @@ const Bookings = () => {
               <th>Payment</th>
               <th>OTP</th>
               <th>Actions</th>
+              <th>Details</th>
             </tr>
           </thead>
           <tbody>
@@ -234,12 +253,17 @@ const Bookings = () => {
                   </Badge>
                 </td>
                 <td>{booking.otp}</td>
-                <td className="text-center">
-                  <Button variant="outline-warning" size="sm" className="mb-1" onClick={() => handleEdit(booking)}>
+                <td className="text-center align-middle">
+                  <Button variant="outline-warning" size="sm" className="me-1 mb-1 mt-1" onClick={() => handleEdit(booking)}>
                     <i className="fas fa-edit"></i>
                   </Button>
                   <Button variant="outline-danger" size="sm" onClick={() => handleDelete(booking._id)}>
                     <i className="fas fa-trash-alt"></i>
+                  </Button>
+                </td>
+                <td className="text-center align-middle">
+                  <Button variant="outline-info" size="sm" className="me-1 mb-1 mt-1" onClick={() => handleViewDetails(booking._id)}>
+                    view
                   </Button>
                 </td>
               </tr>
@@ -287,6 +311,121 @@ const Bookings = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowEditModal(false)}>Cancel</Button>
           <Button variant="primary" onClick={handleSaveChanges}>Save Changes</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Details Modal */}
+      <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Booking Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {bookingDetails && (
+            <div className="row">
+              <div className="col-md-6">
+                <h5>User Information</h5>
+                <p><strong>Name:</strong> {bookingDetails.userId?.name}</p>
+                <p><strong>Email:</strong> {bookingDetails.userId?.email}</p>
+                <p><strong>Mobile:</strong> {bookingDetails.userId?.mobile}</p>
+
+                <h5 className="mt-4">Document Status</h5>
+                <p>
+                  <strong>Aadhar Card:</strong>
+                  <Badge bg={bookingDetails.userId?.documents?.aadharCard?.status === 'approved' ? 'success' : 'warning'} className="ms-2">
+                    {bookingDetails.userId?.documents?.aadharCard?.status || 'Not uploaded'}
+                  </Badge>
+                </p>
+                <p>
+                  <strong>Driving License:</strong>
+                  <Badge bg={bookingDetails.userId?.documents?.drivingLicense?.status === 'approved' ? 'success' : 'warning'} className="ms-2">
+                    {bookingDetails.userId?.documents?.drivingLicense?.status || 'Not uploaded'}
+                  </Badge>
+                </p>
+
+                {/* Document Images Section */}
+                <h5 className="mt-4">Document Images</h5>
+                <div className="document-images">
+                  {bookingDetails.userId?.documents?.aadharCard?.url && (
+                    <div className="mb-3">
+                      <h6>Aadhar Card</h6>
+                      <img
+                        src={bookingDetails.userId.documents.aadharCard.url}
+                        alt="Aadhar Card"
+                        className="img-fluid img-thumbnail"
+                        style={{ maxHeight: '300px' }}
+                      />
+                      <p className="text-muted small mt-1">
+                        Uploaded: {new Date(bookingDetails.userId.documents.aadharCard.uploadedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+
+                  {bookingDetails.userId?.documents?.drivingLicense?.url && (
+                    <div className="mb-3">
+                      <h6>Driving License</h6>
+                      <img
+                        src={bookingDetails.userId.documents.drivingLicense.url}
+                        alt="Driving License"
+                        className="img-fluid img-thumbnail"
+                        style={{ maxHeight: '300px' }}
+                      />
+                      <p className="text-muted small mt-1">
+                        Uploaded: {new Date(bookingDetails.userId.documents.drivingLicense.uploadedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="col-md-6">
+                <h5>Car Information</h5>
+                <p><strong>Car Name:</strong> {bookingDetails.car?.carName}</p>
+                <p><strong>Model:</strong> {bookingDetails.car?.model}</p>
+                <p><strong>Price Per Hour:</strong> ₹{bookingDetails.car?.pricePerHour}</p>
+                <p><strong>Location:</strong> {bookingDetails.car?.location}</p>
+
+                <h5 className="mt-4">Booking Details</h5>
+                <p><strong>Rental Date:</strong> {new Date(bookingDetails.rentalStartDate).toLocaleDateString()}</p>
+                <p><strong>Timings:</strong> {bookingDetails.from} - {bookingDetails.to}</p>
+                <p><strong>Total Price:</strong> ₹{bookingDetails.totalPrice}</p>
+                <p><strong>Pickup Location:</strong> {bookingDetails.pickupLocation}</p>
+                <p><strong>Deposit:</strong> {bookingDetails.deposit}</p>
+                <p>
+                  <strong>Status:</strong>
+                  <Badge bg={getStatusBadge(bookingDetails.status)} className="ms-2">
+                    {bookingDetails.status}
+                  </Badge>
+                </p>
+                <p>
+                  <strong>Payment Status:</strong>
+                  <Badge bg={getPaymentBadge(bookingDetails.paymentStatus)} className="ms-2">
+                    {bookingDetails.paymentStatus}
+                  </Badge>
+                </p>
+                <p><strong>OTP:</strong> {bookingDetails.otp}</p>
+
+                {bookingDetails.car?.carImage && (
+                  <div className="mt-3">
+                    <h5>Car Images</h5>
+                    <div className="d-flex flex-wrap">
+                      {bookingDetails.car.carImage.map((image, index) => (
+                        <img
+                          key={index}
+                          src={image}
+                          alt={`Car ${index + 1}`}
+                          className="img-thumbnail me-2 mb-2"
+                          style={{ width: '150px', height: '100px', objectFit: 'cover' }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>Close</Button>
         </Modal.Footer>
       </Modal>
     </div>

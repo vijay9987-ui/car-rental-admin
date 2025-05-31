@@ -248,11 +248,11 @@ const Staff = () => {
                       <td>{staff.name}</td>
                       <td>{staff.email}</td>
                       <td>{staff.mobile}</td>
-                      <td>
+                      <td className="text-center align-middle">
                         <Button
                           variant="outline-warning"
                           size="sm"
-                          className="me-2"
+                          className="me-1 mb-1 mt-1 ms-1"
                           onClick={() => openEditModal(staff)}
                         >
                           <i className="fas fa-edit" />

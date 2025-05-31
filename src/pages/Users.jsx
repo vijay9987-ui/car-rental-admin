@@ -309,25 +309,25 @@ const Users = () => {
                       <td>{u.name || '-'}</td>
                       <td>{u.mobile || '-'}</td>
                       <td>{u.email || '-'}</td>
-                      <td className='text-center'>
+                      <td className="text-center align-middle">
                         <button
                           size="sm"
                           onClick={() => handleShow(u, users.findIndex(user => user.id === u.id))}
-                          className="me-2 mb-1 btn btn-sm btn-outline-warning"
+                          className="me-1 mb-1 mt-1 ms-1 btn btn-sm btn-outline-warning"
                         >
-                          <i className="fas fa-edit me-1"></i>
+                          <i className="fas fa-edit "></i>
                         </button>
                         <button
                           size="sm"
                           onClick={() => handleDelete(filteredUsers.findIndex(user => user.id === u.id))}
-                          className="me-2 btn btn-sm btn-outline-danger"
+                          className=" btn btn-sm btn-outline-danger"
                         >
-                          <i className="fas fa-trash me-1"></i>
+                          <i className="fas fa-trash "></i>
                         </button>
                       </td>
-                      <td>
+                      <td className="text-center align-middle">
                         <button
-                          className="btn btn-sm btn-outline-info text-center"
+                          className="me-2 btn btn-sm btn-outline-info text-center"
                           onClick={() => handleViewDetails(u.id)}
                         >
                           View
@@ -402,16 +402,22 @@ const Users = () => {
           {detailedUser ? (
             <>
               <Row className="mb-3">
-                <Col md={3} className="text-center">
+                <Col md={4} className="text-center">
                   <Image
                     src={detailedUser.profileImage || "/profile.png"}
                     alt="Profile"
-                    roundedCircle
                     fluid
-                    style={{ maxWidth: "100px" }}
+                    style={{
+                      width: "250px",
+                      height: "250px",
+                      objectFit: "cover",
+                      borderRadius: "50%", // makes it a perfect circle
+                      border: "2px solid #ccc" // optional: adds a light border
+                    }}
                   />
+
                 </Col>
-                <Col md={9}>
+                <Col md={8}>
                   <p><strong>userId: </strong> {detailedUser.id}</p>
                   <p><strong>Name: </strong>{detailedUser.name}</p>
                   <p><strong>Email:</strong> {detailedUser.email}</p>
@@ -483,23 +489,34 @@ const Users = () => {
               <hr />
 
               <h6>Documents</h6>
-              <Row>
-                <Col md={6}>
+              <Row className="mb-4">
+                <Col md={6} className="d-flex flex-column align-items-center text-center">
                   <p><strong>Aadhar Card:</strong></p>
                   {detailedUser.documents?.aadharCard?.url ? (
                     <>
-                      <Image src={detailedUser.documents.aadharCard.url} fluid thumbnail />
+                      <Image
+                        src={detailedUser.documents.aadharCard.url}
+                        style={{ maxWidth: "200px", height: "auto", marginBottom: "10px" }}
+                        fluid
+                        thumbnail
+                      />
                       <p>Status: <span className="badge bg-info">{detailedUser.documents.aadharCard.status}</span></p>
                     </>
                   ) : (
                     <p>Not uploaded</p>
                   )}
                 </Col>
-                <Col md={6}>
+
+                <Col md={6} className="d-flex flex-column align-items-center text-center">
                   <p><strong>Driving License:</strong></p>
                   {detailedUser.documents?.drivingLicense?.url ? (
                     <>
-                      <Image src={detailedUser.documents.drivingLicense.url} fluid thumbnail />
+                      <Image
+                        src={detailedUser.documents.drivingLicense.url}
+                        style={{ maxWidth: "200px", height: "auto", marginBottom: "10px" }}
+                        fluid
+                        thumbnail
+                      />
                       <p>Status: <span className="badge bg-info">{detailedUser.documents.drivingLicense.status}</span></p>
                     </>
                   ) : (
@@ -507,6 +524,7 @@ const Users = () => {
                   )}
                 </Col>
               </Row>
+
             </>
           ) : (
             <div className="text-center">

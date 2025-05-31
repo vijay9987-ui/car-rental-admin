@@ -24,7 +24,7 @@ const AdminBannerManager = () => {
         try {
             const res = await axios.get(`${API_BASE}/allbanner`);
             setBanners(res.data.banners || []);
-            toast.success('Banners fetched successfully!');
+            // toast.success('Banners fetched successfully!');
         } catch (err) {
             setError('Failed to fetch banners');
             toast.error(err.message);

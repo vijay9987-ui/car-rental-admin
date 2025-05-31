@@ -224,6 +224,7 @@ const Vehicles = () => {
             <option value="_id">Search by Id</option>
             <option value="model">Search by Model</option>
             <option value="carName">Search by carName</option>
+            <option value="location">Search by Location</option>
           </Form.Select>
         </div>
         <div className="col-md-6">
@@ -295,14 +296,14 @@ const Vehicles = () => {
                       <td>{vehicle.carName}</td>
                       <td>{vehicle.model}</td>
                       <td>{vehicle.year}</td>
-                      <td>${vehicle.pricePerHour}</td>
+                      <td>₹{vehicle.pricePerHour}</td>
                       <td>{vehicle.fuel}</td>
                       <td>{vehicle.seats}</td>
                       <td>{vehicle.type}</td>
                       <td>{vehicle.location}</td>
                       <td>{vehicle.carType}</td>
-                      <td className="text-center">
-                        <button className="me-1 btn btn-sm btn-outline-warning" onClick={() => openEditModal(vehicle)}>
+                      <td className="text-center align-middle">
+                        <button className="me-1 mb-1 mt-1 ms-1  btn btn-sm btn-outline-warning" onClick={() => openEditModal(vehicle)}>
                           <i className="fas fa-edit"></i>
                         </button>
                         <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(vehicle._id)}>
