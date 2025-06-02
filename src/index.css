@@ -1,4 +1,4 @@
-.table-header th {
-  background: linear-gradient(135deg, #667eea 0%, #667eea 100%);
-  color: white;
+.table-header th{
+  background: linear-gradient(135deg, #667eea 0%, #667eea 100%) !important;
+  color: white !important;
 }

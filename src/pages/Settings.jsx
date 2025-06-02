@@ -56,7 +56,6 @@ const Settings = () => {
       // ✅ Update session storage with new admin data
       const updatedUser = { ...sessionUser, ...adminData };
       sessionStorage.setItem('adminUser', JSON.stringify(updatedUser));
-
     } catch (error) {
       toast.error('Failed to update profile');
     } finally {
@@ -65,57 +64,70 @@ const Settings = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-5">
       <ToastContainer />
-      <h2 className="mb-3 text-center">Admin Settings</h2>
-      {loading ? (
-        <p className="text-center">Loading profile...</p>
-      ) : (
-        <form onSubmit={handleUpdate} className="row g-3">
-          <div className="col-md-6">
-            <label className="form-label">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={adminData.name}
-              onChange={handleChange}
-              className="form-control"
-              required
-            />
+      <div className="row justify-content-center">
+        <div className="col-lg-8 col-md-10">
+          <div className="card shadow-sm border-0">
+            <div className="card-header bg-primary text-white text-center">
+              <h4 className="mb-0">Admin Settings</h4>
+            </div>
+            <div className="card-body">
+              {loading ? (
+                <p className="text-center mb-0">Loading profile...</p>
+              ) : (
+                <form onSubmit={handleUpdate} className="row g-3">
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Full Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={adminData.name}
+                      onChange={handleChange}
+                      className="form-control"
+                      placeholder="Enter full name"
+                      required
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Email Address</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={adminData.email}
+                      onChange={handleChange}
+                      className="form-control"
+                      placeholder="Enter email address"
+                      required
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label fw-semibold">Mobile Number</label>
+                    <input
+                      type="text"
+                      name="mobile"
+                      value={adminData.mobile}
+                      onChange={handleChange}
+                      className="form-control"
+                      placeholder="Enter mobile number"
+                      required
+                    />
+                  </div>
+                  <div className="col-12 text-center mt-3">
+                    <button
+                      type="submit"
+                      className="btn btn-success px-4"
+                      disabled={updating}
+                    >
+                      {updating ? 'Updating...' : 'Update Profile'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
-          <div className="col-md-6">
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={adminData.email}
-              onChange={handleChange}
-              className="form-control"
-              required
-            />
-          </div>
-          <div className="col-md-6">
-            <label className="form-label">Mobile</label>
-            <input
-              type="text"
-              name="mobile"
-              value={adminData.mobile}
-              onChange={handleChange}
-              className="form-control"
-              required
-            />
-          </div>
-          <div className="col-12 text-center">
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={updating}
-            >
-              {updating ? 'Updating...' : 'Update Profile'}
-            </button>
-          </div>
-        </form>
-      )}
+        </div>
+      </div>
     </div>
   );
 };
