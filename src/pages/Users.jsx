@@ -210,7 +210,7 @@ const Users = () => {
   return (
     <div className="p-3">
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-center align-items-center mb-3">
         <h3 className="mb-0">Users Management</h3>
         {/* <Button
           variant="primary"

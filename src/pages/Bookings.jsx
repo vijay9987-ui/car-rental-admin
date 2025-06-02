@@ -188,7 +188,9 @@ const Bookings = () => {
   return (
     <div className="container mt-4">
       <ToastContainer position="top-right" autoClose={2000} />
-      <h2 className="mb-4">Bookings Management</h2>
+      <div className="d-flex justify-content-center allign-items-center">
+        <h2 className="mb-4">Bookings Management</h2>
+      </div>
 
       <Row className="mb-3">
         <Col md={3}>

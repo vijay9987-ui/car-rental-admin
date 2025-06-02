@@ -27,8 +27,10 @@ const AdminLogin = () => {
 
       const data = await response.json();
       sessionStorage.setItem('adminUser', JSON.stringify({
-        mobile: data.mobile,
-        id: data.id,
+        mobile: data.admin.mobile,
+        email: data.admin.email,
+        name: data.admin.name,
+        id: data.admin._id,
         token: data.token,
       }));
       navigate('/admin/dashboard');

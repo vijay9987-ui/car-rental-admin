@@ -14,7 +14,7 @@ import {
   FaChevronRight,
   FaBars
 } from 'react-icons/fa';
-import '../assets/sidebar.css'; // Import the CSS file
+import '../assets/sidebar.css';
 
 const Sidebar = ({ isCollapsed, onToggleCollapse, isMobile }) => {
   const location = useLocation();
@@ -25,9 +25,17 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobile }) => {
     { path: '/admin/staff', icon: <FaUserTie />, label: 'Staff' },
     { path: '/admin/vehicles', icon: <FaCarSide />, label: 'Vehicles' },
     { path: '/admin/bookings', icon: <FaClipboardList />, label: 'Bookings' },
-    { path: '/admin/banners', icon: <FaImages  />, label: 'Banners' },
+    { path: '/admin/banners', icon: <FaImages />, label: 'Banners' },
     { path: '/admin/settings', icon: <FaCog />, label: 'Settings' },
-    { path: '/', icon: <FaSignOutAlt />, label: 'Logout' }
+    { 
+      path: '/logout', // fake path, not used for navigation
+      icon: <FaSignOutAlt />, 
+      label: 'Logout',
+      onClick: () => {
+        sessionStorage.removeItem('adminUser');
+        window.location.href = '/';
+      }
+    }
   ];
 
   return (
@@ -37,7 +45,6 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobile }) => {
         transform: isMobile ? (isCollapsed ? 'translateX(-100%)' : 'translateX(0)') : 'none'
       }}
     >
-      {/* Sidebar Header with Toggle Button */}
       <div className="sidebar-header">
         {!isCollapsed && <h3 className="logo">CarRental</h3>}
         <button 
@@ -49,7 +56,6 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobile }) => {
         </button>
       </div>
 
-      {/* Mobile Toggle Button (only visible on small screens) */}
       {isMobile && (
         <button 
           className="mobile-toggle-btn"
@@ -59,20 +65,32 @@ const Sidebar = ({ isCollapsed, onToggleCollapse, isMobile }) => {
         </button>
       )}
 
-      {/* Menu Items */}
       <ul className="sidebar-menu">
         {menuItems.map((item) => (
-          <li key={item.path}>
-            <Link
-              to={item.path}
-              className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              <span className="menu-icon">{item.icon}</span>
-              {!isCollapsed && <span className="menu-text">{item.label}</span>}
-              {isCollapsed && (
-                <span className="tooltip">{item.label}</span>
-              )}
-            </Link>
+          <li key={item.label}>
+            {item.onClick ? (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={item.onClick}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') item.onClick(); }}
+                className={`menu-item logout-item ${location.pathname === item.path ? 'active' : ''}`}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
+                <span className="menu-icon">{item.icon}</span>
+                {!isCollapsed && <span className="menu-text">{item.label}</span>}
+                {isCollapsed && <span className="tooltip">{item.label}</span>}
+              </div>
+            ) : (
+              <Link
+                to={item.path}
+                className={`menu-item ${location.pathname === item.path ? 'active' : ''}`}
+              >
+                <span className="menu-icon">{item.icon}</span>
+                {!isCollapsed && <span className="menu-text">{item.label}</span>}
+                {isCollapsed && <span className="tooltip">{item.label}</span>}
+              </Link>
+            )}
           </li>
         ))}
       </ul>

@@ -137,7 +137,14 @@ const AdminBannerManager = () => {
             ) : banners.length === 0 ? (
                 <Alert variant="info">No banners found.</Alert>
             ) : (
-                <div className="d-flex overflow-auto flex-row gap-3 pb-3">
+                <div
+                    className="d-flex flex-row gap-3 pb-3 overflow-auto overflow-md-visible"
+                    style={{
+                        flexDirection: window.innerWidth < 768 ? 'column' : 'row',
+                        maxHeight: window.innerWidth < 768 ? '500px' : 'none',
+                    }}
+                >
+
                     {banners.map((banner) => (
                         <Card key={banner._id} className="shadow-sm flex-shrink-0" style={{ minWidth: '300px' }}>
                             <Card.Body>

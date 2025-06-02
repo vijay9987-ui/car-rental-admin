@@ -10,8 +10,9 @@ const Vehicles = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [formData, setFormData] = useState({
-    carName: '', model: '', year: '', pricePerHour: '',
-    fuel: '', seats: '', type: '', location: '', carType: '', carImage: '',
+    carName: '', model: '', year: '', pricePerHour: '', pricePerDay: '',
+    extendedPrice: { perHour: '', perDay: '' }, fuel: '', seats: '', type: '', 
+    location: '', carType: '', carImage: '', status: 'active'
   });
   const [searchType, setSearchType] = useState('carName');
   const [searchText, setSearchText] = useState('');
@@ -28,7 +29,6 @@ const Vehicles = () => {
         const carList = data.cars || [];
         setVehicles(carList);
         setFilteredVehicles(carList);
-        // toast.success('Vehicles fetched successfully!');
       } catch (err) {
         setError(err.message);
         toast.error(err.message);
@@ -54,8 +54,9 @@ const Vehicles = () => {
   const openAddModal = () => {
     setEditingVehicle(null);
     setFormData({
-      carName: '', model: '', year: '', pricePerHour: '',
-      fuel: '', seats: '', type: '', location: '', carType: '', carImage: '',
+      carName: '', model: '', year: '', pricePerHour: '', pricePerDay: '',
+      extendedPrice: { perHour: '', perDay: '' }, fuel: '', seats: '', type: '', 
+      location: '', carType: '', carImage: '', status: 'active'
     });
     setShowModal(true);
   };
@@ -63,10 +64,19 @@ const Vehicles = () => {
   const openEditModal = (vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
-      carName: vehicle.carName, model: vehicle.model, year: vehicle.year,
-      pricePerHour: vehicle.pricePerHour, fuel: vehicle.fuel, seats: vehicle.seats,
-      type: vehicle.type, location: vehicle.location, carType: vehicle.carType,
+      carName: vehicle.carName, 
+      model: vehicle.model, 
+      year: vehicle.year,
+      pricePerHour: vehicle.pricePerHour, 
+      pricePerDay: vehicle.pricePerDay,
+      extendedPrice: vehicle.extendedPrice || { perHour: '', perDay: '' },
+      fuel: vehicle.fuel, 
+      seats: vehicle.seats,
+      type: vehicle.type, 
+      location: vehicle.location, 
+      carType: vehicle.carType,
       carImage: (vehicle.carImage || []).join(', '),
+      status: vehicle.status || 'active'
     });
     setShowModal(true);
   };
@@ -78,6 +88,17 @@ const Vehicles = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleExtendedPriceChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      extendedPrice: {
+        ...prev.extendedPrice,
+        [name]: value
+      }
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newVehicleData = {
@@ -85,6 +106,10 @@ const Vehicles = () => {
       carImage: formData.carImage
         ? formData.carImage.split(',').map((url) => url.trim())
         : [],
+      extendedPrice: {
+        perHour: parseFloat(formData.extendedPrice.perHour) || 0,
+        perDay: parseFloat(formData.extendedPrice.perDay) || 0
+      }
     };
 
     try {
@@ -138,6 +163,10 @@ const Vehicles = () => {
       Model: v.model,
       Year: v.year,
       PricePerHour: v.pricePerHour,
+      PricePerDay: v.pricePerDay,
+      ExtendedPricePerHour: v.extendedPrice?.perHour || '',
+      ExtendedPricePerDay: v.extendedPrice?.perDay || '',
+      Status: v.status || 'active',
       Fuel: v.fuel,
       Seats: v.seats,
       Type: v.type,
@@ -198,13 +227,6 @@ const Vehicles = () => {
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Vehicles Management</h2>
         <div>
-          {/* <Button
-            variant="success"
-            className="me-2"
-            onClick={handleDownload}
-          >
-            Download Excel
-          </Button> */}
           <Button
             variant="primary"
             onClick={openAddModal}
@@ -225,6 +247,7 @@ const Vehicles = () => {
             <option value="model">Search by Model</option>
             <option value="carName">Search by carName</option>
             <option value="location">Search by Location</option>
+            <option value="status">Search by Status</option>
           </Form.Select>
         </div>
         <div className="col-md-6">
@@ -235,17 +258,16 @@ const Vehicles = () => {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />
-            {/* <Button variant="outline-secondary" onClick={() => setSearchText('')}>Clear</Button> */}
           </InputGroup>
         </div>
         <div className="col-md-3 text-end">
-        <Button
-          variant="success"
-          className="me-2 "
-          onClick={handleDownload}
-        >
-          <i className="fas fa-file-excel me-2"></i>Export to Excel
-        </Button>
+          <Button
+            variant="success"
+            className="me-2"
+            onClick={handleDownload}
+          >
+            <i className="fas fa-file-excel me-2"></i>Export to Excel
+          </Button>
         </div>
       </div>
 
@@ -267,6 +289,10 @@ const Vehicles = () => {
                   <th>Model</th>
                   <th>Year</th>
                   <th>Price/Hr</th>
+                  <th>Price/Day</th>
+                  <th>Ext. Price/Hr</th>
+                  <th>Ext. Price/Day</th>
+                  <th>Status</th>
                   <th>Fuel</th>
                   <th>Seats</th>
                   <th>Type</th>
@@ -278,7 +304,7 @@ const Vehicles = () => {
               <tbody>
                 {paginatedVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan="12" className="text-center">No vehicles found.</td>
+                    <td colSpan="16" className="text-center">No vehicles found.</td>
                   </tr>
                 ) : (
                   paginatedVehicles.map((vehicle) => (
@@ -297,13 +323,21 @@ const Vehicles = () => {
                       <td>{vehicle.model}</td>
                       <td>{vehicle.year}</td>
                       <td>₹{vehicle.pricePerHour}</td>
+                      <td>₹{vehicle.pricePerDay}</td>
+                      <td>₹{vehicle.extendedPrice?.perHour || '-'}</td>
+                      <td>₹{vehicle.extendedPrice?.perDay || '-'}</td>
+                      <td>
+                        <span className={`badge bg-${vehicle.status === 'active' ? 'success' : 'warning'}`}>
+                          {vehicle.status || 'active'}
+                        </span>
+                      </td>
                       <td>{vehicle.fuel}</td>
                       <td>{vehicle.seats}</td>
                       <td>{vehicle.type}</td>
                       <td>{vehicle.location}</td>
                       <td>{vehicle.carType}</td>
                       <td className="text-center align-middle">
-                        <button className="me-1 mb-1 mt-1 ms-1  btn btn-sm btn-outline-warning" onClick={() => openEditModal(vehicle)}>
+                        <button className="me-1 mb-1 mt-1 ms-1 btn btn-sm btn-outline-warning" onClick={() => openEditModal(vehicle)}>
                           <i className="fas fa-edit"></i>
                         </button>
                         <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(vehicle._id)}>
@@ -321,33 +355,69 @@ const Vehicles = () => {
       )}
 
       {/* Modal */}
-      <Modal show={showModal} onHide={closeModal} centered>
+      <Modal show={showModal} onHide={closeModal} centered size="lg">
         <Modal.Header closeButton>
           <Modal.Title>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
-            {['carName', 'model', 'year', 'pricePerHour', 'fuel', 'seats', 'type', 'location', 'carType'].map((field) => (
-              <Form.Group key={field} className="mb-3">
-                <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
+            <div className="row">
+              {['carName', 'model', 'year', 'pricePerHour', 'pricePerDay', 'fuel', 'seats', 'type', 'location', 'carType'].map((field) => (
+                <Form.Group key={field} className="mb-3 col-md-6">
+                  <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
+                  <Form.Control
+                    type={['year', 'pricePerHour', 'pricePerDay', 'seats'].includes(field) ? 'number' : 'text'}
+                    name={field}
+                    value={formData[field]}
+                    onChange={handleChange}
+                    required={!['pricePerDay'].includes(field)}
+                  />
+                </Form.Group>
+              ))}
+              
+              <Form.Group className="mb-3 col-md-6">
+                <Form.Label>Extended Price Per Hour</Form.Label>
                 <Form.Control
-                  type={['year', 'pricePerHour', 'seats'].includes(field) ? 'number' : 'text'}
-                  name={field}
-                  value={formData[field]}
-                  onChange={handleChange}
-                  required
+                  type="number"
+                  name="perHour"
+                  value={formData.extendedPrice.perHour}
+                  onChange={handleExtendedPriceChange}
                 />
               </Form.Group>
-            ))}
-            <Form.Group className="mb-3">
-              <Form.Label>Car Image URLs (comma-separated)</Form.Label>
-              <Form.Control
-                type="text"
-                name="carImage"
-                value={formData.carImage}
-                onChange={handleChange}
-              />
-            </Form.Group>
+              
+              <Form.Group className="mb-3 col-md-6">
+                <Form.Label>Extended Price Per Day</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="perDay"
+                  value={formData.extendedPrice.perDay}
+                  onChange={handleExtendedPriceChange}
+                />
+              </Form.Group>
+              
+              <Form.Group className="mb-3 col-md-6">
+                <Form.Label>Status</Form.Label>
+                <Form.Select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                >
+                  <option value="active">Active</option>
+                  <option value="onHold">On Hold</option>
+                </Form.Select>
+              </Form.Group>
+              
+              <Form.Group className="mb-3 col-12">
+                <Form.Label>Car Image URLs (comma-separated)</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="carImage"
+                  value={formData.carImage}
+                  onChange={handleChange}
+                  placeholder="Enter image URLs separated by commas"
+                />
+              </Form.Group>
+            </div>
             <div className="d-flex justify-content-end">
               <Button variant="secondary" onClick={closeModal} className="me-2">Cancel</Button>
               <Button variant="primary" type="submit">{editingVehicle ? 'Update' : 'Add'}</Button>
