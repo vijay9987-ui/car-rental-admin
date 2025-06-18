@@ -11,13 +11,17 @@ const Vehicles = () => {
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [formData, setFormData] = useState({
     carName: '', model: '', year: '', pricePerHour: '', pricePerDay: '',
-    extendedPrice: { perHour: '', perDay: '' }, fuel: '', seats: '', type: '', 
-    location: '', carType: '', carImage: '', status: 'active'
+    extendedPrice: { perHour: '', perDay: '' }, fuel: '', seats: '', type: '',
+    location: '', carType: '', carImage: '', status: 'active',
+    availabilityStatus: true, description: '', vehicleNumber: '',
+    delayPerHour: '', delayPerDay: '',
+    availability: [{ date: '', timeSlots: [''] }]
   });
   const [searchType, setSearchType] = useState('carName');
   const [searchText, setSearchText] = useState('');
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [files, setFiles] = useState([]);
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -55,29 +59,40 @@ const Vehicles = () => {
     setEditingVehicle(null);
     setFormData({
       carName: '', model: '', year: '', pricePerHour: '', pricePerDay: '',
-      extendedPrice: { perHour: '', perDay: '' }, fuel: '', seats: '', type: '', 
-      location: '', carType: '', carImage: '', status: 'active'
+      extendedPrice: { perHour: '', perDay: '' }, fuel: '', seats: '', type: '',
+      location: '', carType: '', carImage: '', status: 'active',
+      availabilityStatus: true, description: '', vehicleNumber: '',
+      delayPerHour: '', delayPerDay: '',
+      availability: [{ date: '', timeSlots: [''] }]
     });
+    setFiles([]);
     setShowModal(true);
   };
 
   const openEditModal = (vehicle) => {
     setEditingVehicle(vehicle);
     setFormData({
-      carName: vehicle.carName, 
-      model: vehicle.model, 
+      carName: vehicle.carName,
+      model: vehicle.model,
       year: vehicle.year,
-      pricePerHour: vehicle.pricePerHour, 
+      pricePerHour: vehicle.pricePerHour,
       pricePerDay: vehicle.pricePerDay,
       extendedPrice: vehicle.extendedPrice || { perHour: '', perDay: '' },
-      fuel: vehicle.fuel, 
+      fuel: vehicle.fuel,
       seats: vehicle.seats,
-      type: vehicle.type, 
-      location: vehicle.location, 
+      type: vehicle.type,
+      location: vehicle.location,
       carType: vehicle.carType,
       carImage: (vehicle.carImage || []).join(', '),
-      status: vehicle.status || 'active'
+      status: vehicle.status || 'active',
+      availabilityStatus: vehicle.availabilityStatus !== false,
+      description: vehicle.description || '',
+      vehicleNumber: vehicle.vehicleNumber || '',
+      delayPerHour: vehicle.delayPerHour || '',
+      delayPerDay: vehicle.delayPerDay || '',
+      availability: vehicle.availability || [{ date: '', timeSlots: [''] }]
     });
+    setFiles([]);
     setShowModal(true);
   };
 
@@ -99,36 +114,72 @@ const Vehicles = () => {
     }));
   };
 
+  const handleFileChange = (e) => {
+    setFiles([...e.target.files]);
+  };
+
+  const handleAvailabilityChange = (index, field, value) => {
+    const updatedAvailability = [...formData.availability];
+    updatedAvailability[index][field] = field === 'timeSlots' ? value.split(',') : value;
+    setFormData(prev => ({
+      ...prev,
+      availability: updatedAvailability
+    }));
+  };
+
+  const addAvailabilitySlot = () => {
+    setFormData(prev => ({
+      ...prev,
+      availability: [...prev.availability, { date: '', timeSlots: [''] }]
+    }));
+  };
+
+  const removeAvailabilitySlot = (index) => {
+    const updatedAvailability = [...formData.availability];
+    updatedAvailability.splice(index, 1);
+    setFormData(prev => ({
+      ...prev,
+      availability: updatedAvailability
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newVehicleData = {
-      ...formData,
-      carImage: formData.carImage
-        ? formData.carImage.split(',').map((url) => url.trim())
-        : [],
-      extendedPrice: {
-        perHour: parseFloat(formData.extendedPrice.perHour) || 0,
-        perDay: parseFloat(formData.extendedPrice.perDay) || 0
+
+    const formDataToSend = new FormData();
+
+    // Add all form data to FormData object
+    Object.keys(formData).forEach(key => {
+      if (key === 'extendedPrice') {
+        formDataToSend.append(key, JSON.stringify(formData[key]));
+      } else if (key === 'availability') {
+        formDataToSend.append(key, JSON.stringify(formData[key].filter(slot => slot.date && slot.timeSlots.length > 0)));
+      } else if (key !== 'carImage') {
+        formDataToSend.append(key, formData[key]);
       }
-    };
+    });
+
+    // Add files if any
+    files.forEach(file => {
+      formDataToSend.append('carImage', file);
+    });
 
     try {
       if (editingVehicle) {
         const res = await fetch(`http://194.164.148.244:4062/api/car/updatecar/${editingVehicle._id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newVehicleData),
+          body: formDataToSend,
         });
         if (!res.ok) throw new Error('Failed to update vehicle');
+        const updatedVehicle = await res.json();
         setVehicles((prev) =>
-          prev.map((v) => (v._id === editingVehicle._id ? { ...v, ...newVehicleData } : v))
+          prev.map((v) => (v._id === editingVehicle._id ? updatedVehicle.car : v))
         );
         toast.success('Car updated successfully!');
       } else {
         const res = await fetch('http://194.164.148.244:4062/api/car/add-cars', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newVehicleData),
+          body: formDataToSend,
         });
         if (!res.ok) throw new Error('Failed to add vehicle');
         const addedVehicle = await res.json();
@@ -167,11 +218,17 @@ const Vehicles = () => {
       ExtendedPricePerHour: v.extendedPrice?.perHour || '',
       ExtendedPricePerDay: v.extendedPrice?.perDay || '',
       Status: v.status || 'active',
+      AvailabilityStatus: v.availabilityStatus !== false ? 'Available' : 'Not Available',
+      Availability: v.availability?.map(a => `${a.date}: ${a.timeSlots.join(', ')}`).join('; ') || '',
       Fuel: v.fuel,
       Seats: v.seats,
       Type: v.type,
       Location: v.location,
       CarType: v.carType,
+      Description: v.description || '',
+      VehicleNumber: v.vehicleNumber || '',
+      DelayPerHour: v.delayPerHour || '',
+      DelayPerDay: v.delayPerDay || '',
       Images: (v.carImage || []).join(', '),
     }));
 
@@ -248,6 +305,7 @@ const Vehicles = () => {
             <option value="carName">Search by carName</option>
             <option value="location">Search by Location</option>
             <option value="status">Search by Status</option>
+            <option value="vehicleNumber">Search by Vehicle Number</option>
           </Form.Select>
         </div>
         <div className="col-md-6">
@@ -282,7 +340,8 @@ const Vehicles = () => {
           <div className="table-responsive">
             <Table bordered hover striped>
               <thead>
-                <tr>
+                <tr className='table-header'>
+                  <th>S.NO</th>
                   <th>ID</th>
                   <th>Image</th>
                   <th>Name</th>
@@ -293,22 +352,27 @@ const Vehicles = () => {
                   <th>Ext. Price/Hr</th>
                   <th>Ext. Price/Day</th>
                   <th>Status</th>
+                  <th>Availability</th>
                   <th>Fuel</th>
                   <th>Seats</th>
                   <th>Type</th>
                   <th>Location</th>
                   <th>Car Type</th>
+                  <th>Veh. Number</th>
+                  <th>Delay/Hr</th>
+                  <th>Delay/Day</th>
                   <th className="text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedVehicles.length === 0 ? (
                   <tr>
-                    <td colSpan="16" className="text-center">No vehicles found.</td>
+                    <td colSpan="20" className="text-center">No vehicles found.</td>
                   </tr>
                 ) : (
-                  paginatedVehicles.map((vehicle) => (
+                  paginatedVehicles.map((vehicle, index) => (
                     <tr key={vehicle._id}>
+                      <td className="text-center">{index + 1}</td>
                       <td>{vehicle._id.slice(-6)}</td>
                       <td>
                         {vehicle.carImage?.[0] ? (
@@ -331,11 +395,19 @@ const Vehicles = () => {
                           {vehicle.status || 'active'}
                         </span>
                       </td>
+                      <td>
+                        <span className={`badge bg-${vehicle.availabilityStatus !== false ? 'success' : 'danger'}`}>
+                          {vehicle.availabilityStatus !== false ? 'Available' : 'Unavailable'}
+                        </span>
+                      </td>
                       <td>{vehicle.fuel}</td>
                       <td>{vehicle.seats}</td>
                       <td>{vehicle.type}</td>
                       <td>{vehicle.location}</td>
                       <td>{vehicle.carType}</td>
+                      <td>{vehicle.vehicleNumber || '-'}</td>
+                      <td>₹{vehicle.delayPerHour || '-'}</td>
+                      <td>₹{vehicle.delayPerDay || '-'}</td>
                       <td className="text-center align-middle">
                         <button className="me-1 mb-1 mt-1 ms-1 btn btn-sm btn-outline-warning" onClick={() => openEditModal(vehicle)}>
                           <i className="fas fa-edit"></i>
@@ -362,19 +434,19 @@ const Vehicles = () => {
         <Modal.Body>
           <Form onSubmit={handleSubmit}>
             <div className="row">
-              {['carName', 'model', 'year', 'pricePerHour', 'pricePerDay', 'fuel', 'seats', 'type', 'location', 'carType'].map((field) => (
+              {['carName', 'model', 'year', 'pricePerHour', 'pricePerDay', 'fuel', 'seats', 'type', 'location', 'carType', 'vehicleNumber', 'delayPerHour', 'delayPerDay'].map((field) => (
                 <Form.Group key={field} className="mb-3 col-md-6">
-                  <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1)}</Form.Label>
+                  <Form.Label>{field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}</Form.Label>
                   <Form.Control
-                    type={['year', 'pricePerHour', 'pricePerDay', 'seats'].includes(field) ? 'number' : 'text'}
+                    type={['year', 'pricePerHour', 'pricePerDay', 'seats', 'delayPerHour', 'delayPerDay'].includes(field) ? 'number' : 'text'}
                     name={field}
                     value={formData[field]}
                     onChange={handleChange}
-                    required={!['pricePerDay'].includes(field)}
+                    required={!['pricePerDay', 'delayPerHour', 'delayPerDay'].includes(field)}
                   />
                 </Form.Group>
               ))}
-              
+
               <Form.Group className="mb-3 col-md-6">
                 <Form.Label>Extended Price Per Hour</Form.Label>
                 <Form.Control
@@ -384,7 +456,7 @@ const Vehicles = () => {
                   onChange={handleExtendedPriceChange}
                 />
               </Form.Group>
-              
+
               <Form.Group className="mb-3 col-md-6">
                 <Form.Label>Extended Price Per Day</Form.Label>
                 <Form.Control
@@ -394,7 +466,7 @@ const Vehicles = () => {
                   onChange={handleExtendedPriceChange}
                 />
               </Form.Group>
-              
+
               <Form.Group className="mb-3 col-md-6">
                 <Form.Label>Status</Form.Label>
                 <Form.Select
@@ -406,17 +478,88 @@ const Vehicles = () => {
                   <option value="onHold">On Hold</option>
                 </Form.Select>
               </Form.Group>
-              
+
+              <Form.Group className="mb-3 col-md-6">
+                <Form.Label>Availability Status</Form.Label>
+                <Form.Select
+                  name="availabilityStatus"
+                  value={formData.availabilityStatus}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    availabilityStatus: e.target.value === 'true'
+                  }))}
+                >
+                  <option value="true">Available</option>
+                  <option value="false">Not Available</option>
+                </Form.Select>
+              </Form.Group>
+
               <Form.Group className="mb-3 col-12">
-                <Form.Label>Car Image URLs (comma-separated)</Form.Label>
+                <Form.Label>Description</Form.Label>
                 <Form.Control
-                  type="text"
-                  name="carImage"
-                  value={formData.carImage}
+                  as="textarea"
+                  rows={3}
+                  name="description"
+                  value={formData.description}
                   onChange={handleChange}
-                  placeholder="Enter image URLs separated by commas"
                 />
               </Form.Group>
+
+              <Form.Group className="mb-3 col-12">
+                <Form.Label>Car Images</Form.Label>
+                <Form.Control
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  accept="image/*"
+                />
+                {editingVehicle && formData.carImage && (
+                  <div className="mt-2">
+                    <small>Current Images: {formData.carImage}</small>
+                  </div>
+                )}
+              </Form.Group>
+
+              {/* <Form.Group className="mb-3 col-12">
+                <Form.Label>Availability Slots</Form.Label>
+                {formData.availability.map((slot, index) => (
+                  <div key={index} className="row mb-2">
+                    <div className="col-md-5">
+                      <Form.Control
+                        type="date"
+                        placeholder="Date (YYYY/MM/DD)"
+                        value={slot.date}
+                        onChange={(e) => handleAvailabilityChange(index, 'date', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-5">
+                      <Form.Control
+                        type="text"
+                        placeholder="Time slots (comma separated)"
+                        value={slot.timeSlots?.join(',') || ''}
+                        onChange={(e) => handleAvailabilityChange(index, 'timeSlots', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-md-2">
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => removeAvailabilitySlot(index)}
+                        disabled={formData.availability.length <= 1}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={addAvailabilitySlot}
+                >
+                  Add Availability Slot
+                </Button>
+              </Form.Group> */}
             </div>
             <div className="d-flex justify-content-end">
               <Button variant="secondary" onClick={closeModal} className="me-2">Cancel</Button>

@@ -4,6 +4,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import * as XLSX from 'xlsx';
 
+
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -153,8 +154,8 @@ const Users = () => {
       Email: user.email || '-',
       Mobile: user.mobile || '-',
       'Profile Image': user.profileImage || '-',
-      'Created At': user.createdAt ? new Date(user.createdAt).toLocaleString() : '-',
-      'Updated At': user.updatedAt ? new Date(user.updatedAt).toLocaleString() : '-',
+      'Created At': user.createdAt ? new Date(user.createdAt) : '-',
+      'Updated At': user.updatedAt ? new Date(user.updatedAt) : '-',
       'Total Bookings': user.myBookings?.length || 0,
       'Wallet Amount': user.totalWalletAmount || 0,
       'Aadhar Status': user.documents?.aadharCard?.status || 'Not uploaded',
@@ -210,8 +211,8 @@ const Users = () => {
   return (
     <div className="p-3">
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className="d-flex justify-content-center align-items-center mb-3">
-        <h3 className="mb-0">Users Management</h3>
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h2 className="mb-0">Users Management</h2>
         {/* <Button
           variant="primary"
           onClick={() => handleShow()}
@@ -295,7 +296,7 @@ const Users = () => {
                 {currentUsers.length > 0 ? (
                   currentUsers.map((u, i) => (
                     <tr key={indexOfFirstUser + i}>
-                      <td>{indexOfFirstUser + i + 1}</td>
+                      <td className="text-center">{indexOfFirstUser + i + 1}</td>
                       <td>{u.id?.slice(-6) || '-'}</td>
                       <td>
                         <Image

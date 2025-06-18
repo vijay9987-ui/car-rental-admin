@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Table, Button, Modal, Form, Pagination, Badge, Row, Col, InputGroup } from "react-bootstrap";
 import { ToastContainer, toast } from 'react-toastify';
@@ -21,9 +21,37 @@ const Bookings = () => {
     fetchBookings();
   }, []);
 
+  const filterBookings = useCallback(() => {
+    const filtered = bookings.filter((booking) => {
+      const fieldVal = (() => {
+        switch (filterField) {
+          case "id":
+            return booking._id || '';
+          case "name":
+            return booking.userId?.name || '';
+          case "email":
+            return booking.userId?.email || '';
+          case "pickuplocation":
+            return booking.pickupLocation || '';
+          case "status":
+            return booking.status || '';
+          case "paymentstatus":
+            return booking.paymentStatus || '';
+          case "rentaldate":
+            return booking.rentalStartDate ? new Date(booking.rentalStartDate).toLocaleDateString() : '';
+          default:
+            return "";
+        }
+      })();
+      return fieldVal.toString().toLowerCase().includes(searchQuery.toLowerCase());
+    });
+    setFilteredBookings(filtered);
+    setCurrentPage(1);
+  }, [bookings, searchQuery, filterField]);
+
   useEffect(() => {
     filterBookings();
-  }, [bookings, searchQuery, filterField]);
+  }, [filterBookings]);
 
   const fetchBookings = async () => {
     try {
@@ -48,34 +76,6 @@ const Bookings = () => {
       console.error("Error fetching booking details:", error);
       toast.error("Failed to fetch booking details.");
     }
-  };
-
-  const filterBookings = () => {
-    const filtered = bookings.filter((booking) => {
-      const fieldVal = (() => {
-        switch (filterField) {
-          case "id":
-            return booking._id;
-          case "name":
-            return booking.userId?.name;
-          case "email":
-            return booking.userId?.email;
-          case "pickuplocation":
-            return booking.pickupLocation;
-          case "status":
-            return booking.status;
-          case "paymentstatus":
-            return booking.paymentStatus;
-          case "rentaldate":
-            return new Date(booking.rentalStartDate).toLocaleDateString();
-          default:
-            return "";
-        }
-      })();
-      return fieldVal?.toString().toLowerCase().includes(searchQuery.toLowerCase());
-    });
-    setFilteredBookings(filtered);
-    setCurrentPage(1);
   };
 
   const handleEdit = (booking) => {
@@ -116,7 +116,8 @@ const Bookings = () => {
   };
 
   const getStatusBadge = (status) => {
-    switch (status?.toLowerCase()) {
+    if (!status) return 'secondary';
+    switch (status.toLowerCase()) {
       case 'pending': return 'warning';
       case 'confirmed': return 'info';
       case 'active': return 'primary';
@@ -127,7 +128,8 @@ const Bookings = () => {
   };
 
   const getPaymentBadge = (paymentStatus) => {
-    switch (paymentStatus?.toLowerCase()) {
+    if (!paymentStatus) return 'secondary';
+    switch (paymentStatus.toLowerCase()) {
       case 'paid': return 'success';
       case 'pending': return 'warning';
       default: return 'secondary';
@@ -164,18 +166,18 @@ const Bookings = () => {
 
   const handleDownloadExcel = () => {
     const data = bookings.map(booking => ({
-      ID: booking._id,
-      Name: booking.userId?.name,
-      Email: booking.userId?.email,
-      Car: booking.car?.carName,
-      Model: booking.car?.model,
-      RentalDate: new Date(booking.rentalStartDate).toLocaleDateString(),
-      Timings: `${booking.from} - ${booking.to}`,
-      TotalPrice: booking.totalPrice,
-      PickupLocation: booking.pickupLocation,
-      Status: booking.status,
-      PaymentStatus: booking.paymentStatus,
-      OTP: booking.otp
+      ID: booking._id || '',
+      Name: booking.userId?.name || '',
+      Email: booking.userId?.email || '',
+      Car: booking.car?.carName || '',
+      Model: booking.car?.model || '',
+      RentalDate: booking.rentalStartDate ? new Date(booking.rentalStartDate).toLocaleDateString() : '',
+      Timings: `${booking.from || ''} - ${booking.to || ''}`,
+      TotalPrice: booking.totalPrice || '',
+      PickupLocation: booking.pickupLocation || '',
+      Status: booking.status || '',
+      PaymentStatus: booking.paymentStatus || '',
+      OTP: booking.otp || ''
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -218,6 +220,7 @@ const Bookings = () => {
         <Table striped bordered hover responsive>
           <thead>
             <tr className="table-header">
+              <th>S.NO</th>
               <th>Name</th>
               <th>Email</th>
               <th>Car</th>
@@ -234,42 +237,49 @@ const Bookings = () => {
             </tr>
           </thead>
           <tbody>
-            {currentBookings.map((booking) => (
-              <tr key={booking._id}>
-                <td>{booking.userId?.name}</td>
-                <td>{booking.userId?.email}</td>
-                <td>{booking.car?.carName}</td>
-                <td>{booking.car?.model}</td>
-                <td>{new Date(booking.rentalStartDate).toLocaleDateString()}</td>
-                <td>{booking.from} - {booking.to}</td>
-                <td>₹{booking.totalPrice}</td>
-                <td>{booking.pickupLocation}</td>
-                <td>
-                  <Badge bg={getStatusBadge(booking.status)} className="text-capitalize">
-                    {booking.status}
-                  </Badge>
-                </td>
-                <td>
-                  <Badge bg={getPaymentBadge(booking.paymentStatus)} className="text-capitalize">
-                    {booking.paymentStatus}
-                  </Badge>
-                </td>
-                <td>{booking.otp}</td>
-                <td className="text-center align-middle">
-                  <Button variant="outline-warning" size="sm" className="me-1 mb-1 mt-1" onClick={() => handleEdit(booking)}>
-                    <i className="fas fa-edit"></i>
-                  </Button>
-                  <Button variant="outline-danger" size="sm" onClick={() => handleDelete(booking._id)}>
-                    <i className="fas fa-trash-alt"></i>
-                  </Button>
-                </td>
-                <td className="text-center align-middle">
-                  <Button variant="outline-info" size="sm" className="me-1 mb-1 mt-1" onClick={() => handleViewDetails(booking._id)}>
-                    view
-                  </Button>
-                </td>
+            {currentBookings.length > 0 ? (
+              currentBookings.map((booking, index) => (
+                <tr key={booking._id}>
+                  <td className="text-center">{index + 1}</td>
+                  <td>{booking.userId?.name || 'N/A'}</td>
+                  <td>{booking.userId?.email || 'N/A'}</td>
+                  <td>{booking.car?.carName || 'N/A'}</td>
+                  <td>{booking.car?.model || 'N/A'}</td>
+                  <td>{booking.rentalStartDate ? new Date(booking.rentalStartDate).toLocaleDateString() : 'N/A'}</td>
+                  <td>{booking.from || 'N/A'} - {booking.to || 'N/A'}</td>
+                  <td>₹{booking.totalPrice || '0'}</td>
+                  <td>{booking.pickupLocation || 'N/A'}</td>
+                  <td>
+                    <Badge bg={getStatusBadge(booking.status)} className="text-capitalize">
+                      {booking.status || 'N/A'}
+                    </Badge>
+                  </td>
+                  <td>
+                    <Badge bg={getPaymentBadge(booking.paymentStatus)} className="text-capitalize">
+                      {booking.paymentStatus || 'N/A'}
+                    </Badge>
+                  </td>
+                  <td>{booking.otp || 'N/A'}</td>
+                  <td className="text-center align-middle">
+                    <Button variant="outline-warning" size="sm" className="me-1 mb-1 mt-1" onClick={() => handleEdit(booking)}>
+                      <i className="fas fa-edit"></i>
+                    </Button>
+                    <Button variant="outline-danger" size="sm" onClick={() => handleDelete(booking._id)}>
+                      <i className="fas fa-trash-alt"></i>
+                    </Button>
+                  </td>
+                  <td className="text-center align-middle">
+                    <Button variant="outline-info" size="sm" className="me-1 mb-1 mt-1" onClick={() => handleViewDetails(booking._id)}>
+                      view
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="13" className="text-center">No bookings found</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </Table>
         {renderPagination()}
@@ -304,7 +314,7 @@ const Bookings = () => {
                   onChange={(e) => setSelectedBooking({ ...selectedBooking, paymentStatus: e.target.value })}
                 >
                   <option value="pending">Pending</option>
-                  <option value="Paid">Paid</option>
+                  <option value="paid">Paid</option>
                 </Form.Select>
               </Form.Group>
             </Form>
@@ -324,6 +334,7 @@ const Bookings = () => {
         <Modal.Body>
           {bookingDetails && (
             <div className="row">
+              {/* Left Column: User Info + Document */}
               <div className="col-md-6">
                 <h5>User Information</h5>
                 <p><strong>Name:</strong> {bookingDetails.userId?.name}</p>
@@ -344,7 +355,7 @@ const Bookings = () => {
                   </Badge>
                 </p>
 
-                {/* Document Images Section */}
+                {/* Document Images */}
                 <h5 className="mt-4">Document Images</h5>
                 <div className="document-images">
                   {bookingDetails.userId?.documents?.aadharCard?.url && (
@@ -379,19 +390,34 @@ const Bookings = () => {
                 </div>
               </div>
 
+              {/* Right Column: Car Info + Booking Info */}
               <div className="col-md-6">
                 <h5>Car Information</h5>
                 <p><strong>Car Name:</strong> {bookingDetails.car?.carName}</p>
                 <p><strong>Model:</strong> {bookingDetails.car?.model}</p>
-                <p><strong>Price Per Hour:</strong> ₹{bookingDetails.car?.pricePerHour}</p>
+                <p><strong>Year:</strong> {bookingDetails.car?.year}</p>
+                <p><strong>Vehicle No.:</strong> {bookingDetails.car?.vehicleNumber}</p>
+                <p><strong>Type:</strong> {bookingDetails.car?.type}</p>
+                <p><strong>Fuel:</strong> {bookingDetails.car?.fuel}</p>
+                <p><strong>Seats:</strong> {bookingDetails.car?.seats}</p>
                 <p><strong>Location:</strong> {bookingDetails.car?.location}</p>
+                <p><strong>Car Type:</strong> {bookingDetails.car?.carType}</p>
+                <p><strong>Price Per Hour:</strong> ₹{bookingDetails.car?.pricePerHour}</p>
+                <p><strong>Price Per Day:</strong> ₹{bookingDetails.car?.pricePerDay}</p>
+                <p><strong>Extended Per Hour:</strong> ₹{bookingDetails.car?.extendedPrice?.perHour}</p>
+                <p><strong>Extended Per Day:</strong> ₹{bookingDetails.car?.extendedPrice?.perDay}</p>
+                <p><strong>Delay Per Hour:</strong> ₹{bookingDetails.car?.delayPerHour}</p>
+                <p><strong>Delay Per Day:</strong> ₹{bookingDetails.car?.delayPerDay}</p>
 
                 <h5 className="mt-4">Booking Details</h5>
-                <p><strong>Rental Date:</strong> {new Date(bookingDetails.rentalStartDate).toLocaleDateString()}</p>
+                <p><strong>Rental Start:</strong> {new Date(bookingDetails.rentalStartDate).toLocaleDateString()}</p>
+                <p><strong>Rental End:</strong> {new Date(bookingDetails.rentalEndDate).toLocaleDateString()}</p>
                 <p><strong>Timings:</strong> {bookingDetails.from} - {bookingDetails.to}</p>
                 <p><strong>Total Price:</strong> ₹{bookingDetails.totalPrice}</p>
                 <p><strong>Pickup Location:</strong> {bookingDetails.pickupLocation}</p>
                 <p><strong>Deposit:</strong> {bookingDetails.deposit}</p>
+                <p><strong>OTP:</strong> {bookingDetails.otp}</p>
+
                 <p>
                   <strong>Status:</strong>
                   <Badge bg={getStatusBadge(bookingDetails.status)} className="ms-2">
@@ -404,9 +430,8 @@ const Bookings = () => {
                     {bookingDetails.paymentStatus}
                   </Badge>
                 </p>
-                <p><strong>OTP:</strong> {bookingDetails.otp}</p>
 
-                {bookingDetails.car?.carImage && (
+                {bookingDetails.car?.carImage?.length > 0 && (
                   <div className="mt-3">
                     <h5>Car Images</h5>
                     <div className="d-flex flex-wrap">

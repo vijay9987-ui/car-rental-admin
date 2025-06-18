@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { Form, Button, Container, Row, Col, Card, Alert, Spinner } from 'react-bootstrap';
+import {
+  Form,
+  Button,
+  Container,
+  Row,
+  Col,
+  Card,
+  Alert,
+  Spinner
+} from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
 const AdminLogin = () => {
   const [mobile, setMobile] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -17,7 +27,7 @@ const AdminLogin = () => {
       const response = await fetch('http://194.164.148.244:4062/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mobile }),
+        body: JSON.stringify({ mobile, password }),
       });
 
       if (!response.ok) {
@@ -33,6 +43,7 @@ const AdminLogin = () => {
         id: data.admin._id,
         token: data.token,
       }));
+
       navigate('/admin/dashboard');
     } catch (err) {
       setError(err.message || 'Something went wrong');
@@ -42,31 +53,37 @@ const AdminLogin = () => {
   };
 
   return (
-    <div style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
+    <div
+      style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}
+    >
       <Container>
         <Row className="justify-content-center">
           <Col xs={12} sm={10} md={8} lg={6} xl={5}>
-            <Card className="shadow-lg border-0" style={{
-              borderRadius: '15px',
-              overflow: 'hidden',
-              backdropFilter: 'blur(10px)',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)'
-            }}>
+            <Card
+              className="shadow-lg border-0"
+              style={{
+                borderRadius: '15px',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                overflow: 'hidden'
+              }}
+            >
               <Card.Body className="p-4 p-sm-5">
                 <div className="text-center mb-4">
-                  <h3 className="fw-bold" style={{ 
-                    color: '#6f42c1',
-                    background: 'linear-gradient(to right, #6f42c1, #6610f2)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}>
+                  <h3
+                    className="fw-bold"
+                    style={{
+                      background: 'linear-gradient(to right, #6f42c1, #6610f2)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}
+                  >
                     Admin Portal
                   </h3>
                   <p className="text-muted">Sign in to your admin account</p>
@@ -79,12 +96,10 @@ const AdminLogin = () => {
                 )}
 
                 <Form onSubmit={handleSubmit}>
-                  <Form.Group controlId="mobile" className="mb-4">
+                  <Form.Group controlId="mobile" className="mb-3">
                     <Form.Label className="text-muted">Mobile Number</Form.Label>
                     <div className="input-group">
-                      <span className="input-group-text bg-light border-end-0">
-                        +91
-                      </span>
+                      <span className="input-group-text bg-light border-end-0">+91</span>
                       <Form.Control
                         type="tel"
                         placeholder="Enter mobile number"
@@ -97,10 +112,22 @@ const AdminLogin = () => {
                     </div>
                   </Form.Group>
 
-                  <Button 
-                    type="submit" 
-                    variant="primary" 
-                    className="w-100 py-3 mt-3 rounded-pill border-0"
+                  <Form.Group controlId="password" className="mb-4">
+                    <Form.Label className="text-muted">Password</Form.Label>
+                    <Form.Control
+                      type="password"
+                      placeholder="Enter password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      style={{ height: '50px' }}
+                    />
+                  </Form.Group>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    className="w-100 py-3 mt-2 rounded-pill border-0"
                     disabled={loading}
                     style={{
                       background: 'linear-gradient(to right, #6f42c1, #6610f2)',
@@ -125,24 +152,6 @@ const AdminLogin = () => {
                     )}
                   </Button>
                 </Form>
-
-                <div className="text-center mt-4">
-                  <p className="text-muted mb-0">
-                    Don't have admin access?{' '}
-                    <span
-                      className="text-primary fw-bold"
-                      style={{ 
-                        cursor: 'pointer',
-                        background: 'linear-gradient(to right, #6f42c1, #6610f2)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                      }}
-                      onClick={() => navigate('/register')}
-                    >
-                      Register
-                    </span>
-                  </p>
-                </div>
               </Card.Body>
             </Card>
           </Col>
