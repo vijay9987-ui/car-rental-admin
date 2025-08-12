@@ -55,7 +55,9 @@ const AdminLogin = () => {
   return (
     <div
       style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundImage: 'url("/carback.jpg")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -70,7 +72,7 @@ const AdminLogin = () => {
               className="shadow-lg border-0"
               style={{
                 borderRadius: '15px',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backgroundColor: 'rgba(255, 255, 255, 0.75)',
                 overflow: 'hidden'
               }}
             >

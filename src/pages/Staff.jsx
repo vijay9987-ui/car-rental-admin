@@ -10,6 +10,8 @@ import {
   Pagination,
   Row,
   Col,
+  Badge,
+  ButtonGroup
 } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify';
 import * as XLSX from 'xlsx';
@@ -20,7 +22,9 @@ const Staff = () => {
   const [filteredStaff, setFilteredStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
+  const [viewingStaff, setViewingStaff] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,7 +38,7 @@ const Staff = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const staffPerPage = 5;
+  const staffPerPage = 10;
   const indexOfLastStaff = currentPage * staffPerPage;
   const indexOfFirstStaff = indexOfLastStaff - staffPerPage;
   const currentStaff = filteredStaff.slice(indexOfFirstStaff, indexOfLastStaff);
@@ -54,18 +58,45 @@ const Staff = () => {
   };
 
   const renderPagination = () => {
+    if (!totalPages || totalPages < 1) return null; // prevent rendering if totalPages is invalid
+
     const pages = [];
-    for (let number = 1; number <= totalPages; number++) {
+    const pageSet = new Set();
+
+    // Always add first page
+    pageSet.add(1);
+
+    // Only add last page if more than 1
+    if (totalPages > 1) {
+      pageSet.add(totalPages);
+    }
+
+    // Add current page and its neighbors
+    if (currentPage > 1) pageSet.add(currentPage - 1);
+    pageSet.add(currentPage);
+    if (currentPage < totalPages) pageSet.add(currentPage + 1);
+
+    // Convert to sorted array
+    const sortedPages = Array.from(pageSet).sort((a, b) => a - b);
+
+    let lastPage = 0;
+    sortedPages.forEach((page) => {
+      if (page - lastPage > 1) {
+        pages.push(<Pagination.Ellipsis key={`ellipsis-${page}`} disabled />);
+      }
+
       pages.push(
         <Pagination.Item
-          key={number}
-          active={number === currentPage}
-          onClick={() => setCurrentPage(number)}
+          key={page}
+          active={page === currentPage}
+          onClick={() => setCurrentPage(page)}
         >
-          {number}
+          {page}
         </Pagination.Item>
       );
-    }
+
+      lastPage = page;
+    });
 
     return (
       <Pagination className="mt-3 justify-content-center">
@@ -85,6 +116,7 @@ const Staff = () => {
       </Pagination>
     );
   };
+
 
   const fetchStaff = async () => {
     try {
@@ -119,6 +151,11 @@ const Staff = () => {
     setShowModal(true);
   };
 
+  const openViewModal = (staff) => {
+    setViewingStaff(staff);
+    setShowViewModal(true);
+  };
+
   const openAddModal = () => {
     setEditingStaff(null);
     setFormData({
@@ -136,6 +173,11 @@ const Staff = () => {
   const closeModal = () => {
     setShowModal(false);
     setEditingStaff(null);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingStaff(null);
   };
 
   const handleChange = (e) => {
@@ -187,29 +229,82 @@ const Staff = () => {
     }
   };
 
-  const downloadExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      staffList.map((staff) => ({
-        ID: staff._id,
-        Name: staff.name,
-        Email: staff.email,
-        Mobile: staff.mobile,
-        Address: staff.address,
-        Role: staff.role,
-        Status: staff.status,
-        ProfileImage: staff.profileImage,
-      }))
-    );
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'StaffList');
-    XLSX.writeFile(workbook, 'StaffList.xlsx');
+  const getRoleBadge = (role) => {
+    switch (role) {
+      case 'admin': return 'danger';
+      case 'manager': return 'warning';
+      case 'staff': return 'primary';
+      default: return 'secondary';
+    }
   };
+
+  const getStatusBadge = (status) => {
+    return status === 'active' ? 'success' : 'danger';
+  };
+
+  const downloadExcel = () => {
+    try {
+      toast.info('Preparing Excel file with staff data...', { autoClose: 2000 });
+
+      // Prepare worksheet
+      const worksheet = XLSX.utils.json_to_sheet(
+        staffList.map((staff) => ({
+          ID: staff._id,
+          Name: staff.name || '-',
+          Email: staff.email || '-',
+          Mobile: staff.mobile || '-',
+          Address: staff.address || '-',
+          Role: staff.role || '-',
+          Status: staff.status || '-',
+          'Profile Image': staff.profileImage || '-',
+        }))
+      );
+
+      // Create workbook and append sheet
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'StaffList');
+
+      // Optional: set column widths
+      worksheet['!cols'] = [
+        { wch: 20 }, // ID
+        { wch: 25 }, // Name
+        { wch: 30 }, // Email
+        { wch: 15 }, // Mobile
+        { wch: 30 }, // Address
+        { wch: 15 }, // Role
+        { wch: 15 }, // Status
+        { wch: 40 }, // Profile Image
+      ];
+
+      // Add header style
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "4F81BD" } },
+        alignment: { horizontal: "center" }
+      };
+      const range = XLSX.utils.decode_range(worksheet['!ref']);
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (worksheet[cellAddress]) {
+          worksheet[cellAddress].s = headerStyle;
+        }
+      }
+
+      // Write file
+      XLSX.writeFile(workbook, 'StaffList.xlsx');
+      toast.success('Excel file downloaded successfully!', { autoClose: 2000 });
+    } catch (error) {
+      console.error('Error generating Excel:', error);
+      toast.error('Failed to generate Excel file', { autoClose: 2000 });
+    }
+  };
+
 
   return (
     <div className="container-fluid p-3">
       <ToastContainer position="top-right" autoClose={2000} />
-      <div className='d-flex justify-content-between'>
-        <h2 className="mb-4 text-center">Staff Members</h2>
+      <div className='d-flex justify-content-between align-items-center mb-4'>
+        <h2 className="mb-0">Staff Members</h2>
         <div>
           <Button variant="primary" onClick={openAddModal}>
             <i className="fas fa-plus me-2"></i>Add Staff
@@ -220,10 +315,10 @@ const Staff = () => {
       <Row className="mb-3">
         <Col md={3}>
           <Form.Select value={filterField} onChange={(e) => setFilterField(e.target.value)}>
-            <option value="id">Filter by Id</option>
-            <option value="name">Filter by Name</option>
-            <option value="email">Filter by Email</option>
-            <option value="mobile">Filter by Mobile</option>
+            <option value="name">Search by Name</option>
+            <option value="email">Search by Email</option>
+            <option value="mobile">Search by Mobile</option>
+            <option value="role">Search by Role</option>
           </Form.Select>
         </Col>
         <Col md={6}>
@@ -250,15 +345,13 @@ const Staff = () => {
       ) : (
         <>
           <div className="table-responsive">
-            <Table bordered hover responsive striped className="text-center">
+            <Table bordered hover responsive striped>
               <thead>
                 <tr className="table-header">
                   <th>S.NO</th>
-                  <th>ID</th>
-                  <th>Image</th>
+                  <th>Profile</th>
                   <th>Name</th>
-                  <th>Email</th>
-                  <th>Mobile</th>
+                  <th>Contact</th>
                   <th>Role</th>
                   <th>Status</th>
                   <th>Actions</th>
@@ -267,43 +360,50 @@ const Staff = () => {
               <tbody>
                 {currentStaff.length === 0 ? (
                   <tr>
-                    <td colSpan="8">No staff found.</td>
+                    <td colSpan="7" className="text-center">No staff found</td>
                   </tr>
                 ) : (
                   currentStaff.map((staff, index) => (
                     <tr key={staff._id}>
-                      <td className="text-center">{index + 1}</td>
-                      <td>{staff._id?.slice(-6)}</td>
+                      <td className="text-center">{(currentPage - 1) * staffPerPage + index + 1}</td>
                       <td>
                         <Image
                           src={staff.profileImage || 'default-profile-image.jpg'}
                           alt={staff.name}
                           roundedCircle
                           style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-
                         />
                       </td>
-                      <td>{staff.name}</td>
-                      <td>{staff.email}</td>
-                      <td>{staff.mobile}</td>
-                      <td>{staff.role}</td>
-                      <td>{staff.status}</td>
+                      <td>
+                        <div><strong>{staff.name}</strong></div>
+                        <div className="small text-muted">{staff.email}</div>
+                      </td>
+                      <td>
+                        <div>{staff.mobile}</div>
+                        <div className="small text-muted">{staff.address || 'No address'}</div>
+                      </td>
+                      <td>
+                        <Badge bg={getRoleBadge(staff.role)} className="text-capitalize">
+                          {staff.role}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge bg={getStatusBadge(staff.status)} className="text-capitalize">
+                          {staff.status}
+                        </Badge>
+                      </td>
                       <td className="text-center align-middle">
-                        <Button
-                          variant="outline-warning"
-                          size="sm"
-                          className="me-1 mb-1 mt-1 ms-1"
-                          onClick={() => openEditModal(staff)}
-                        >
-                          <i className="fas fa-edit" />
-                        </Button>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDelete(staff._id)}
-                        >
-                          <i className="fas fa-trash" />
-                        </Button>
+                        <ButtonGroup size="sm">
+                          <Button variant="outline-info" onClick={() => openViewModal(staff)}>
+                            <i className="fas fa-eye" />
+                          </Button>
+                          <Button variant="outline-warning" onClick={() => openEditModal(staff)}>
+                            <i className="fas fa-edit" />
+                          </Button>
+                          <Button variant="outline-danger" onClick={() => handleDelete(staff._id)}>
+                            <i className="fas fa-trash" />
+                          </Button>
+                        </ButtonGroup>
                       </td>
                     </tr>
                   ))
@@ -330,7 +430,7 @@ const Staff = () => {
                   name={field}
                   value={formData[field]}
                   onChange={handleChange}
-                  required
+                  required={field !== 'address'}
                 />
               </Form.Group>
             ))}
@@ -359,6 +459,72 @@ const Staff = () => {
             </div>
           </Form>
         </Modal.Body>
+      </Modal>
+
+      {/* View Modal */}
+      <Modal show={showViewModal} onHide={closeViewModal} size="lg" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Staff Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {viewingStaff && (
+            <div className="row">
+              <div className="col-md-4 text-center">
+                <Image
+                  src={viewingStaff.profileImage || 'default-profile-image.jpg'}
+                  alt={viewingStaff.name}
+                  fluid
+                  roundedCircle
+                  style={{
+                    width: '200px',
+                    height: '200px',
+                    objectFit: 'cover',
+                    border: '3px solid #dee2e6'
+                  }}
+                />
+              </div>
+              <div className="col-md-8">
+                <h4>{viewingStaff.name}</h4>
+                <hr />
+
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <p><strong>Email:</strong> {viewingStaff.email}</p>
+                    <p><strong>Mobile:</strong> {viewingStaff.mobile}</p>
+                    <p><strong>Address:</strong> {viewingStaff.address || 'Not specified'}</p>
+                  </div>
+                  <div className="col-md-6">
+                    <p>
+                      <strong>Role:</strong>
+                      <Badge bg={getRoleBadge(viewingStaff.role)} className="ms-2">
+                        {viewingStaff.role}
+                      </Badge>
+                    </p>
+                    <p>
+                      <strong>Status:</strong>
+                      <Badge bg={getStatusBadge(viewingStaff.status)} className="ms-2">
+                        {viewingStaff.status}
+                      </Badge>
+                    </p>
+                    <p><strong>Created By:</strong> {viewingStaff.createdBy || 'System'}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <h5>Additional Information</h5>
+                  <hr />
+                  <p><strong>Staff ID:</strong> {viewingStaff._id}</p>
+                  <p><strong>OTP Status:</strong> {viewingStaff.otp ? 'Generated' : 'Not generated'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeViewModal}>
+            Close
+          </Button>
+        </Modal.Footer>
       </Modal>
     </div>
   );

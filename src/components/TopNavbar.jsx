@@ -1,10 +1,32 @@
-import React from 'react';
-import { Navbar, Container, Nav } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
+import { Navbar, Container, Nav, Badge, Dropdown } from 'react-bootstrap';
+import { BellFill } from 'react-bootstrap-icons';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const TopNavbar = ({ onToggleSidebar }) => {
+  const [notifications, setNotifications] = useState([]);
+  const navigate = useNavigate();
+
   const storedUser = sessionStorage.getItem('adminUser');
   const sessionUser = storedUser ? JSON.parse(storedUser) : null;
   const name = sessionUser?.name;
+
+  // Fetch notifications from API
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get('http://194.164.148.244:4062/api/admin/allnotifications');
+        if (response.data?.notifications) {
+          setNotifications(response.data.notifications);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   return (
     <Navbar
@@ -30,12 +52,66 @@ const TopNavbar = ({ onToggleSidebar }) => {
           Admin Panel
         </Navbar.Brand>
 
-        {/* Collapsible content (for small screens) */}
+        {/* Toggle for collapse */}
         <Navbar.Toggle aria-controls="admin-navbar-nav" />
 
         <Navbar.Collapse id="admin-navbar-nav" className="justify-content-end">
-          <Nav>
-            <span className="navbar-text fw-semibold text-secondary text-end">
+          <Nav className="align-items-center gap-3">
+            {/* Notifications Dropdown */}
+            <Dropdown align="end">
+              <Dropdown.Toggle
+                variant="light"
+                className="position-relative border-0"
+                id="notification-dropdown"
+              >
+                <BellFill size={20} className="text-primary" />
+                {notifications.length > 0 && (
+                  <Badge
+                    bg="danger"
+                    pill
+                    className="position-absolute top-0 start-100 translate-middle"
+                  >
+                    {notifications.length}
+                  </Badge>
+                )}
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu className="dropdown-menu-end p-0" style={{ width: '300px' }}>
+                <Dropdown.Header className="bg-light px-3 py-2">Notifications</Dropdown.Header>
+                {notifications.length === 0 ? (
+                  <Dropdown.ItemText className="text-muted px-3 py-2">No notifications</Dropdown.ItemText>
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        maxHeight: '250px',
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {notifications.slice(0, 5).map((notif) => (
+                        <Dropdown.ItemText
+                          key={notif._id}
+                          className="px-3 py-2 border-bottom small text-wrap"
+                        >
+                          {notif.message}
+                        </Dropdown.ItemText>
+                      ))}
+                    </div>
+                    <Dropdown.Divider />
+                    <Dropdown.Item
+                      onClick={() => navigate('/admin/notifications')}
+                      className="text-center text-primary fw-semibold"
+                    >
+                      View All
+                    </Dropdown.Item>
+
+                  </>
+                )}
+              </Dropdown.Menu>
+            </Dropdown>
+
+            {/* User greeting */}
+            <span className="navbar-text fw-semibold text-secondary">
               Welcome, {name}
             </span>
           </Nav>

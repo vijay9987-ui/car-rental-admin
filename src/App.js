@@ -10,6 +10,7 @@ import Users from './pages/Users';
 import Vehicles from './pages/Vehicles';
 import Bookings from './pages/Bookings';
 import AdminBannerManager from './pages/AdminBannerManager';
+import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import Staff from './pages/Staff';
 import PrivateRoute from './components/PrivateRoute'; // import your new private route
@@ -32,6 +33,7 @@ function App() {
             <Route path="vehicles" element={<Vehicles />} />
             <Route path="bookings" element={<Bookings />} />
             <Route path="banners" element={<AdminBannerManager />} />
+            <Route path="notifications" element={<Notifications />} />
             <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
